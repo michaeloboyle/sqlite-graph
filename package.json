@@ -1,0 +1,50 @@
+{
+  "name": "sqlite-graph",
+  "version": "0.1.0",
+  "description": "High-performance graph database built on SQLite with a fluent query DSL",
+  "license": "MIT",
+  "author": "Michael O'Boyle",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "bench": "node benchmarks/index.js",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.0",
+    "@types/jest": "^29.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "graph",
+    "database",
+    "sqlite",
+    "graph-database",
+    "query",
+    "relationships",
+    "nodes",
+    "edges",
+    "fluent-api",
+    "typescript"
+  ]
+}
