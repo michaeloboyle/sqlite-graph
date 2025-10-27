@@ -333,9 +333,14 @@ export class NodeQuery {
    * @private
    */
   private buildSQL(countOnly: boolean = false): string {
+    // Use DISTINCT for regular queries when using 'both' to avoid duplicates from bidirectional edges
+    const useDistinct = this.joins.some(j => j.direction === 'both');
+
     let sql = countOnly
       ? 'SELECT COUNT(*) as count FROM nodes n'
-      : 'SELECT n.* FROM nodes n';
+      : useDistinct
+        ? 'SELECT DISTINCT n.* FROM nodes n'
+        : 'SELECT n.* FROM nodes n';
 
     // Add joins for connectedTo conditions
     for (let i = 0; i < this.joins.length; i++) {
@@ -353,7 +358,22 @@ export class NodeQuery {
         if (join.targetNodeType) {
           sql += ` INNER JOIN nodes ${targetAlias} ON ${targetAlias}.id = ${alias}.from_id AND ${targetAlias}.type = ?`;
         }
+      } else if (join.direction === 'both') {
+        // For 'both' direction, match edges in either direction
+        sql += ` INNER JOIN edges ${alias} ON ((${alias}.from_id = n.id OR ${alias}.to_id = n.id) AND ${alias}.type = ?)`;
+        if (join.targetNodeType) {
+          // Join to target nodes, handling both directions
+          sql += ` INNER JOIN nodes ${targetAlias} ON `;
+          sql += `((${alias}.from_id = n.id AND ${targetAlias}.id = ${alias}.to_id) OR `;
+          sql += `(${alias}.to_id = n.id AND ${targetAlias}.id = ${alias}.from_id)) `;
+          sql += `AND ${targetAlias}.type = ?`;
+        }
       }
+    }
+
+    // Use DISTINCT for count queries when using 'both' to avoid duplicates
+    if (countOnly && this.joins.some(j => j.direction === 'both')) {
+      sql = sql.replace('SELECT COUNT(*) as count', 'SELECT COUNT(DISTINCT n.id) as count');
     }
 
     // Add WHERE conditions

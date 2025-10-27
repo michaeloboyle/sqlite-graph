@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { initializeSchema } from './Schema';
 import { NodeQuery } from '../query/NodeQuery';
 import { TraversalQuery } from '../query/TraversalQuery';
+import { TransactionContext } from './Transaction';
 import {
   Node,
   Edge,
@@ -108,7 +109,7 @@ export class GraphDatabase {
     this.preparedStatements.set(
       'updateNode',
       this.db.prepare(
-        'UPDATE nodes SET properties = ?, updated_at = strftime("%s", "now") WHERE id = ? RETURNING *'
+        "UPDATE nodes SET properties = ?, updated_at = strftime('%s', 'now') WHERE id = ? RETURNING *"
       )
     );
     this.preparedStatements.set(
@@ -432,26 +433,59 @@ export class GraphDatabase {
 
   /**
    * Execute a function within a transaction.
-   * Automatically commits on success or rolls back on error.
+   * Automatically commits on success or rolls back on error, unless manually controlled.
    *
    * @template T - Return type of the transaction function
-   * @param fn - Function to execute within transaction
+   * @param fn - Function to execute within transaction, receives TransactionContext
    * @returns The return value of the transaction function
    *
    * @throws {Error} If transaction function throws (after rollback)
    *
    * @example
    * ```typescript
-   * const result = db.transaction(() => {
+   * // Automatic commit/rollback
+   * const result = db.transaction((ctx) => {
    *   const job = db.createNode('Job', { title: 'Engineer' });
    *   const company = db.createNode('Company', { name: 'TechCorp' });
    *   db.createEdge('POSTED_BY', job.id, company.id);
    *   return { job, company };
    * });
+   *
+   * // Manual control with savepoints
+   * db.transaction((ctx) => {
+   *   const job = db.createNode('Job', { title: 'Test' });
+   *   ctx.savepoint('job_created');
+   *   try {
+   *     db.createEdge('POSTED_BY', job.id, companyId);
+   *   } catch (err) {
+   *     ctx.rollbackTo('job_created');
+   *   }
+   *   ctx.commit();
+   * });
    * ```
    */
-  transaction<T>(fn: () => T): T {
-    return this.db.transaction(fn)();
+  transaction<T>(fn: (ctx: TransactionContext) => T): T {
+    // Start transaction
+    this.db.prepare('BEGIN').run();
+
+    const ctx = new TransactionContext(this.db);
+
+    try {
+      const result = fn(ctx);
+
+      // Auto-commit if not manually finalized
+      if (!ctx.isFinalized()) {
+        ctx.commit();
+      }
+
+      return result;
+    } catch (error) {
+      // Auto-rollback on error if not manually finalized
+      if (!ctx.isFinalized()) {
+        ctx.rollback();
+      }
+      throw error;
+    }
   }
 
   /**
