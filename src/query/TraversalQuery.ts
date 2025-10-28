@@ -379,6 +379,49 @@ export class TraversalQuery {
   }
 
   /**
+   * Find paths to a target node with optional constraints.
+   * Wrapper that delegates to toPaths() or allPaths() based on options.
+   *
+   * @param targetNodeId - ID of target node
+   * @param options - Optional path finding configuration
+   * @param options.maxPaths - Maximum number of paths to return (uses allPaths if specified)
+   * @param options.maxDepth - Maximum depth to search (overrides traversal maxDepth)
+   * @returns Array of paths, where each path is an array of nodes
+   *
+   * @example
+   * ```typescript
+   * // Find all paths (uses toPaths internally)
+   * const allPaths = db.traverse(job1Id).paths(job2Id);
+   *
+   * // Limit number of paths (uses allPaths internally)
+   * const limitedPaths = db.traverse(job1Id).paths(job2Id, { maxPaths: 5 });
+   *
+   * // With maxDepth constraint
+   * const shortPaths = db.traverse(job1Id).paths(job2Id, { maxDepth: 3 });
+   * ```
+   */
+  paths(targetNodeId: number, options?: {
+    maxPaths?: number;
+    maxDepth?: number;
+  }): Node[][] {
+    // Apply maxDepth if provided in options
+    if (options?.maxDepth !== undefined) {
+      this.maxDepth(options.maxDepth);
+    }
+
+    // Use allPaths if maxPaths is specified, otherwise use toPaths logic
+    if (options?.maxPaths !== undefined) {
+      return this.allPaths(targetNodeId, options.maxPaths);
+    }
+
+    // Filter toPaths() results to only include paths ending at target
+    const allPaths = this.toPaths();
+    return allPaths.filter(path =>
+      path.length > 0 && path[path.length - 1].id === targetNodeId
+    );
+  }
+
+  /**
    * Find all paths to a target node (up to a maximum number).
    *
    * @param targetNodeId - ID of target node
