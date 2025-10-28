@@ -185,8 +185,9 @@ describe('TraversalQuery - paths() wrapper', () => {
       .out('LINKS')
       .paths(self.id);
 
-    // Should find path to itself
-    expect(paths.length).toBeGreaterThan(0);
+    // Self-loops should be prevented by cycle detection
+    // A path from A to A via a self-loop would be infinite
+    expect(paths.length).toBe(0);
   });
 
   it('should combine with other traversal methods', () => {

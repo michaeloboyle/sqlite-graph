@@ -288,15 +288,20 @@ export class TraversalQuery {
    */
   toPaths(): Node[][] {
     const paths: Node[][] = [];
-    const queue: Array<{ nodeId: number; path: Node[]; depth: number }> = [
-      { nodeId: this.startNodeId, path: [], depth: 0 }
+    const queue: Array<{ nodeId: number; path: Node[]; depth: number; visited: Set<number> }> = [
+      { nodeId: this.startNodeId, path: [], depth: 0, visited: new Set() }
     ];
 
     while (queue.length > 0) {
-      const { nodeId, path, depth } = queue.shift()!;
+      const { nodeId, path, depth, visited } = queue.shift()!;
 
       // Check max depth
       if (this.maxDepthValue !== undefined && depth > this.maxDepthValue) {
+        continue;
+      }
+
+      // Cycle detection: skip if node already in this path
+      if (visited.has(nodeId)) {
         continue;
       }
 
@@ -305,6 +310,8 @@ export class TraversalQuery {
       if (!node) continue;
 
       const newPath = [...path, node];
+      const newVisited = new Set(visited);
+      newVisited.add(nodeId);
 
       // Apply filter
       if (this.filterPredicate && !this.filterPredicate(node)) {
@@ -322,7 +329,7 @@ export class TraversalQuery {
         const neighbors = this.getNeighbors(nodeId, step);
 
         for (const neighborId of neighbors) {
-          queue.push({ nodeId: neighborId, path: newPath, depth: depth + 1 });
+          queue.push({ nodeId: neighborId, path: newPath, depth: depth + 1, visited: newVisited });
         }
       }
     }
