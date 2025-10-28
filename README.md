@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
 
-**Status:** 🚧 Under Active Development (SPARC Phase 1: Specification)
+**Status:** 🚧 Under Active Development (Phase 1: Core Implementation)
 
 ## Overview
 
@@ -113,7 +113,9 @@ Track software dependencies, versions, and relationships.
 
 This project uses the **SPARC methodology** (Specification, Pseudocode, Architecture, Refinement, Completion) with [claude-flow](https://github.com/ruvnet/claude-flow) for AI-powered development orchestration.
 
-**Current Phase:** Specification (80% complete)
+**Current Phase:** Core Implementation (Phase 1)
+
+Recent progress includes Database class, Transaction support, NodeQuery and TraversalQuery implementations, path finding with cycle detection, and savepoint functionality.
 
 See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology documentation.
 
@@ -133,15 +135,17 @@ See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology d
 - [x] Project setup and configuration
 - [x] Type system design
 - [x] Database schema
-- [ ] Database class implementation
-- [ ] Node/Edge CRUD operations
-- [ ] Transaction support
-- [ ] Basic tests
+- [x] Database class implementation
+- [x] Node/Edge CRUD operations
+- [x] Transaction support with savepoints
+- [x] Path finding with cycle detection
+- [ ] Comprehensive test coverage
 
-### Phase 2: Query DSL
-- [ ] NodeQuery fluent API
-- [ ] TraversalQuery implementation
-- [ ] Graph algorithms (BFS, shortest path)
+### Phase 2: Query DSL (In Progress)
+- [x] NodeQuery fluent API
+- [x] TraversalQuery implementation
+- [x] Graph algorithms (BFS, shortest path)
+- [x] Path enumeration (paths() wrapper)
 - [ ] Integration tests
 
 ### Phase 3: Advanced Features
@@ -205,5 +209,6 @@ MIT License - see [LICENSE](LICENSE) for details
 ---
 
 **Status:** Under active development using SPARC methodology
-**Current Phase:** Specification → Pseudocode
-**Next Milestone:** Complete core Database implementation
+**Current Phase:** Core Implementation (Phase 1-2)
+**Next Milestone:** Comprehensive testing and documentation
+**Recent Updates:** Database class, transactions, query DSL, path finding, cycle detection
