@@ -2,6 +2,32 @@
 
 **Date:** 2025-10-28
 **Status:** ✅ Working and Ready
+**Last Updated:** 2025-10-28 (Fixed tmux compatibility issues)
+
+## Recent Fixes (Commit 33bd7be)
+
+### Bug Fixes Applied:
+1. **C-m → Enter syntax** - Replaced deprecated tmux C-m with Enter for better compatibility
+2. **tput terminal detection** - Added fallback to 120x40 when tput fails in non-interactive mode
+3. **Percentage pane sizing** - Replaced 45% with calculated absolute width for tmux compatibility
+4. **ts-node dependency** - Added ts-node as dev dependency (v10.9.2)
+5. **Validation script** - Created scripts/test-demo.sh to verify all requirements
+
+### Validation Results:
+```bash
+$ ./scripts/test-demo.sh
+🧪 Testing automated demo script...
+✅ Script is executable
+✅ Has proper bash shebang
+✅ Uses correct Enter syntax for tmux
+✅ tmux is installed
+✅ npm is installed
+✅ ts-node is available
+✅ All required functions present
+✅ Demo TypeScript file exists
+✅ Script syntax is valid
+🎉 All tests passed!
+```
 
 ## Quick Verification Test
 
@@ -99,8 +125,9 @@ Successfully ran `npx ts-node examples/demo-new-features.ts`:
 
 ### Demo Files
 1. `examples/demo-new-features.ts` - Working demonstration
-2. `scripts/automated-demo.sh` - Tmux split-screen runner
-3. `scripts/README.md` - Complete documentation
+2. `scripts/automated-demo.sh` - Tmux split-screen runner (FIXED)
+3. `scripts/test-demo.sh` - Validation test script (NEW)
+4. `scripts/README.md` - Complete documentation
 
 ## Next Steps
 
