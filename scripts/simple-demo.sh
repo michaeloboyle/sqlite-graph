@@ -162,8 +162,8 @@ const alice = db.createNode('Person', { name: 'Alice' });
 const bob = db.createNode('Person', { name: 'Bob' });
 const charlie = db.createNode('Person', { name: 'Charlie' });
 
-db.createEdge('KNOWS', alice.id, bob.id, {});
-db.createEdge('KNOWS', charlie.id, bob.id, {});
+db.createEdge(alice.id, 'KNOWS', bob.id);
+db.createEdge(charlie.id, 'KNOWS', bob.id);
 
 console.log('📊 Social Network Created:');
 console.log('  Alice → Bob');
@@ -226,10 +226,10 @@ const B = db.createNode('Node', { name: 'B' });
 const C = db.createNode('Node', { name: 'C' });
 const D = db.createNode('Node', { name: 'D' });
 
-db.createEdge('CONNECTS', A.id, B.id, {});
-db.createEdge('CONNECTS', B.id, D.id, {});
-db.createEdge('CONNECTS', A.id, C.id, {});
-db.createEdge('CONNECTS', C.id, D.id, {});
+db.createEdge(A.id, 'CONNECTS', B.id);
+db.createEdge(B.id, 'CONNECTS', D.id);
+db.createEdge(A.id, 'CONNECTS', C.id);
+db.createEdge(C.id, 'CONNECTS', D.id);
 
 console.log('🗺️  Graph Created:');
 console.log('  A → B → D');
