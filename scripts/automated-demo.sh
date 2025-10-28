@@ -62,14 +62,19 @@ setup_tmux() {
     # Kill existing session if it exists
     tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
 
+    # Get terminal dimensions (fallback to 120x40 if tput fails)
+    local cols="${COLUMNS:-$(tput cols 2>/dev/null || echo 120)}"
+    local lines="${LINES:-$(tput lines 2>/dev/null || echo 40)}"
+
     # Create new session
-    tmux new-session -d -s "$TMUX_SESSION" -x "$(tput cols)" -y "$(tput lines)"
+    tmux new-session -d -s "$TMUX_SESSION" -x "$cols" -y "$lines"
 
     # Split window vertically (side-by-side)
     tmux split-window -h -t "$TMUX_SESSION"
 
     # Resize panes (45% code/output, 55% execution)
-    tmux resize-pane -t "$TMUX_SESSION:0.0" -x 45%
+    local left_width=$((cols * 45 / 100))
+    tmux resize-pane -t "$TMUX_SESSION:0.0" -x "$left_width"
 
     # Set pane titles
     tmux select-pane -t "$TMUX_SESSION:0.0" -T "Code Examples"
@@ -80,10 +85,10 @@ setup_tmux() {
     tmux set-option -t "$TMUX_SESSION" pane-border-format "#{pane_title}"
 
     # Code display in left pane
-    tmux send-keys -t "$TMUX_SESSION:0.0" "clear" C-m
-    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}═══════════════════════════════════${NC}'" C-m
-    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}  sqlite-graph Features${NC}'" C-m
-    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}═══════════════════════════════════${NC}'" C-m
+    tmux send-keys -t "$TMUX_SESSION:0.0" "clear" Enter
+    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}═══════════════════════════════════${NC}'" Enter
+    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}  sqlite-graph Features${NC}'" Enter
+    tmux send-keys -t "$TMUX_SESSION:0.0" "echo -e '${CYAN}═══════════════════════════════════${NC}'" Enter
 
     # Select the execution pane (right side)
     tmux select-pane -t "$TMUX_SESSION:0.1"
@@ -92,18 +97,18 @@ setup_tmux() {
 # Send command to execution pane
 exec_cmd() {
     local cmd="$1"
-    tmux send-keys -t "$TMUX_SESSION:0.1" "$cmd" C-m
+    tmux send-keys -t "$TMUX_SESSION:0.1" "$cmd" Enter
 }
 
 # Send text to code pane
 show_code() {
     local text="$1"
-    tmux send-keys -t "$TMUX_SESSION:0.0" "$text" C-m
+    tmux send-keys -t "$TMUX_SESSION:0.0" "$text" Enter
 }
 
 # Clear code pane
 clear_code() {
-    tmux send-keys -t "$TMUX_SESSION:0.0" "clear" C-m
+    tmux send-keys -t "$TMUX_SESSION:0.0" "clear" Enter
 }
 
 # Typing effect
