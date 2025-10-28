@@ -113,7 +113,8 @@ export class TransactionContext {
     if (this.savepoints.has(name)) {
       throw new Error(`Savepoint ${name} already exists`);
     }
-    this.db.prepare(`SAVEPOINT ${name}`).run();
+    // Quote identifier to allow hyphens and special characters
+    this.db.prepare(`SAVEPOINT "${name}"`).run();
     this.savepoints.add(name);
   }
 
@@ -139,7 +140,8 @@ export class TransactionContext {
     if (!this.savepoints.has(name)) {
       throw new Error(`Savepoint ${name} does not exist`);
     }
-    this.db.prepare(`ROLLBACK TO ${name}`).run();
+    // Quote identifier to allow hyphens and special characters
+    this.db.prepare(`ROLLBACK TO "${name}"`).run();
     // Note: SQLite keeps the savepoint after ROLLBACK TO, unlike RELEASE
   }
 
