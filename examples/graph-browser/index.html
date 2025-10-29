@@ -7,6 +7,7 @@
   <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/eclipse.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
   <style>
@@ -16,22 +17,37 @@
       box-sizing: border-box;
     }
 
+    /* Light theme (default) */
     :root {
       --primary: #0084ff;
       --primary-dark: #0066cc;
       --success: #28a745;
       --danger: #dc3545;
-      --dark: #1e1e1e;
-      --darker: #141414;
-      --light: #f5f5f5;
-      --border: #333;
-      --text: #e0e0e0;
-      --text-muted: #999;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f5;
+      --bg-tertiary: #e8e8e8;
+      --border: #ddd;
+      --text: #333;
+      --text-muted: #666;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Dark theme (when system prefers dark) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1e;
+        --bg-secondary: #141414;
+        --bg-tertiary: #2a2a2a;
+        --border: #333;
+        --text: #e0e0e0;
+        --text-muted: #999;
+        --shadow: rgba(0, 0, 0, 0.3);
+      }
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--darker);
+      background: var(--bg-secondary);
       color: var(--text);
       height: 100vh;
       overflow: hidden;
@@ -39,12 +55,13 @@
 
     /* Header */
     .header {
-      background: var(--dark);
+      background: var(--bg-primary);
       border-bottom: 1px solid var(--border);
       padding: 15px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      box-shadow: 0 1px 3px var(--shadow);
     }
 
     .logo {
@@ -77,11 +94,12 @@
     }
 
     button.secondary {
-      background: var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text);
     }
 
     button.secondary:hover {
-      background: #444;
+      background: var(--border);
     }
 
     /* Main Layout */
@@ -93,7 +111,7 @@
     /* Sidebar */
     .sidebar {
       width: 300px;
-      background: var(--dark);
+      background: var(--bg-primary);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -113,7 +131,7 @@
     }
 
     .sample-query {
-      background: var(--darker);
+      background: var(--bg-secondary);
       padding: 10px;
       border-radius: 4px;
       margin-bottom: 10px;
@@ -145,7 +163,7 @@
     }
 
     .stat {
-      background: var(--darker);
+      background: var(--bg-secondary);
       padding: 12px;
       border-radius: 4px;
       text-align: center;
@@ -173,7 +191,7 @@
 
     /* Query Editor */
     .query-editor {
-      background: var(--dark);
+      background: var(--bg-primary);
       border-bottom: 1px solid var(--border);
       padding: 15px;
     }
@@ -221,7 +239,7 @@
 
     .tabs {
       display: flex;
-      background: var(--dark);
+      background: var(--bg-primary);
       border-bottom: 1px solid var(--border);
     }
 
@@ -234,7 +252,7 @@
 
     .tab.active {
       border-bottom-color: var(--primary);
-      background: var(--darker);
+      background: var(--bg-secondary);
     }
 
     .tab-content {
@@ -251,7 +269,7 @@
     #graph-viz {
       width: 100%;
       height: 100%;
-      background: var(--darker);
+      background: var(--bg-secondary);
     }
 
     /* Table View */
@@ -263,7 +281,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      background: var(--dark);
+      background: var(--bg-primary);
     }
 
     th, td {
@@ -273,7 +291,7 @@
     }
 
     th {
-      background: var(--darker);
+      background: var(--bg-secondary);
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
@@ -285,7 +303,7 @@
     }
 
     tr:hover {
-      background: var(--darker);
+      background: var(--bg-secondary);
     }
 
     /* JSON View */
@@ -296,7 +314,7 @@
     }
 
     pre {
-      background: var(--dark);
+      background: var(--bg-secondary);
       padding: 15px;
       border-radius: 4px;
       overflow-x: auto;
@@ -304,13 +322,14 @@
 
     /* Status Bar */
     .status-bar {
-      background: var(--dark);
+      background: var(--bg-primary);
       border-top: 1px solid var(--border);
       padding: 8px 20px;
       font-size: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 -1px 3px var(--shadow);
     }
 
     .status-item {
@@ -487,12 +506,18 @@
   </div>
 
   <script>
-    // Initialize CodeMirror
+    // Initialize CodeMirror with theme based on system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
       mode: 'text/javascript',
-      theme: 'dracula',
+      theme: prefersDark ? 'dracula' : 'eclipse',
       lineNumbers: true,
       lineWrapping: true,
+    });
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      editor.setOption('theme', e.matches ? 'dracula' : 'eclipse');
     });
 
     // Keyboard shortcuts
