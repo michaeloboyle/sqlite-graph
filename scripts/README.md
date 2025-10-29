@@ -1,8 +1,41 @@
 # sqlite-graph Demo Scripts
 
-## Automated Demo Runner
+Two demo options available: a simple sequential demo (recommended) and an advanced split-screen demo.
 
-Interactive split-screen demonstration of newly implemented features using tmux.
+## 🎯 Simple Demo (Recommended)
+
+**File:** `simple-demo.sh`
+**Requirements:** Any terminal with color support
+**Interactive:** Yes - press Enter to continue between sections
+
+Sequential demonstration that works in any terminal without tmux.
+
+```bash
+./scripts/simple-demo.sh
+```
+
+**Features:**
+- ✅ No tmux dependency
+- ✅ Clear, sequential presentation
+- ✅ Live code execution for each feature
+- ✅ Color-coded output
+- ✅ Interactive pauses between sections
+
+**Perfect for:**
+- Quick feature overview
+- CI/CD environments
+- Terminals without tmux
+- Simple presentations
+
+---
+
+## 🚀 Automated Split-Screen Demo (Advanced)
+
+**File:** `automated-demo.sh`
+**Requirements:** tmux, ts-node, interactive terminal
+**Interactive:** Visual only - fully automated execution
+
+Advanced split-screen demonstration using tmux.
 
 ### Quick Start
 
@@ -20,11 +53,15 @@ Interactive split-screen demonstration of newly implemented features using tmux.
 ./scripts/automated-demo.sh 2  # TransactionContext demo
 ```
 
-### Features Demonstrated
+### Common Features (Both Demos)
+
+Both demos showcase:
 
 1. **TransactionContext API** - Manual commit/rollback with savepoints
 2. **Bidirectional Queries** - 'both' direction support in NodeQuery
 3. **paths() Wrapper** - Convenient path-finding API
+
+All features include live TypeScript code execution.
 
 ### Requirements
 

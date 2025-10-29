@@ -12,7 +12,7 @@
  *
  * const job = db.createNode('Job', { title: 'Engineer', status: 'active' });
  * const company = db.createNode('Company', { name: 'TechCorp' });
- * db.createEdge('POSTED_BY', job.id, company.id);
+ * db.createEdge(job.id, 'POSTED_BY', company.id);
  *
  * const activeJobs = db.nodes('Job')
  *   .where({ status: 'active' })

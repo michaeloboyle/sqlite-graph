@@ -36,7 +36,7 @@ import {
  *   name: 'TechCorp'
  * });
  *
- * db.createEdge('POSTED_BY', job.id, company.id);
+ * db.createEdge(job.id, 'POSTED_BY', company.id);
  *
  * const activeJobs = db.nodes('Job')
  *   .where({ status: 'active' })
@@ -271,8 +271,8 @@ export class GraphDatabase {
    * Create an edge (relationship) between two nodes.
    *
    * @template T - Type of the edge properties
-   * @param type - Edge type (e.g., 'POSTED_BY', 'REQUIRES', 'SIMILAR_TO')
    * @param from - Source node ID
+   * @param type - Edge type (e.g., 'POSTED_BY', 'REQUIRES', 'SIMILAR_TO')
    * @param to - Target node ID
    * @param properties - Optional edge properties
    * @returns The created edge with assigned ID
@@ -283,15 +283,16 @@ export class GraphDatabase {
    *
    * @example
    * ```typescript
-   * const edge = db.createEdge('REQUIRES', jobId, skillId, {
+   * // Natural reading: "job REQUIRES skill"
+   * const edge = db.createEdge(jobId, 'REQUIRES', skillId, {
    *   level: 'expert',
    *   required: true
    * });
    * ```
    */
   createEdge<T extends NodeData = NodeData>(
-    type: string,
     from: number,
+    type: string,
     to: number,
     properties?: T
   ): Edge<T> {
@@ -447,7 +448,7 @@ export class GraphDatabase {
    * const result = db.transaction((ctx) => {
    *   const job = db.createNode('Job', { title: 'Engineer' });
    *   const company = db.createNode('Company', { name: 'TechCorp' });
-   *   db.createEdge('POSTED_BY', job.id, company.id);
+   *   db.createEdge(job.id, 'POSTED_BY', company.id);
    *   return { job, company };
    * });
    *
@@ -456,7 +457,7 @@ export class GraphDatabase {
    *   const job = db.createNode('Job', { title: 'Test' });
    *   ctx.savepoint('job_created');
    *   try {
-   *     db.createEdge('POSTED_BY', job.id, companyId);
+   *     db.createEdge(job.id, 'POSTED_BY', companyId);
    *   } catch (err) {
    *     ctx.rollbackTo('job_created');
    *   }
@@ -551,7 +552,7 @@ export class GraphDatabase {
       }
 
       for (const edge of data.edges) {
-        this.createEdge(edge.type, edge.from, edge.to, edge.properties);
+        this.createEdge(edge.from, edge.type, edge.to, edge.properties);
       }
     });
   }

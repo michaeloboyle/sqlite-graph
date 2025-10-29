@@ -13,7 +13,7 @@
  */
 
 import { GraphDatabase } from '../src/index';
-import type { Node } from '../src/types';
+import type { Node } from '../src/types/index';
 import * as fs from 'fs';
 
 // =============================================================================
@@ -209,63 +209,63 @@ const { companies, jobs, skills, user } = db.transaction((ctx) => {
   console.log(`✓ Created user profile`);
 
   // Create POSTED_BY relationships (jobs → companies)
-  db.createEdge('POSTED_BY', seniorDevJob.id, techCorp.id);
-  db.createEdge('POSTED_BY', mlEngineerJob.id, dataInc.id);
-  db.createEdge('POSTED_BY', devopsJob.id, cloudSys.id);
-  db.createEdge('POSTED_BY', juniorDevJob.id, techCorp.id);
+  db.createEdge(seniorDevJob.id, 'POSTED_BY', techCorp.id);
+  db.createEdge(mlEngineerJob.id, 'POSTED_BY', dataInc.id);
+  db.createEdge(devopsJob.id, 'POSTED_BY', cloudSys.id);
+  db.createEdge(juniorDevJob.id, 'POSTED_BY', techCorp.id);
 
   // Create REQUIRES relationships (jobs → skills)
   // Senior Dev requires TypeScript, React
-  db.createEdge('REQUIRES', seniorDevJob.id, typescript.id, {
+  db.createEdge(seniorDevJob.id, 'REQUIRES', typescript.id, {
     proficiency_required: 'expert'
   });
-  db.createEdge('REQUIRES', seniorDevJob.id, react.id, {
+  db.createEdge(seniorDevJob.id, 'REQUIRES', react.id, {
     proficiency_required: 'expert'
   });
-  db.createEdge('REQUIRES', seniorDevJob.id, docker.id, {
+  db.createEdge(seniorDevJob.id, 'REQUIRES', docker.id, {
     proficiency_required: 'intermediate'
   });
 
   // ML Engineer requires Python, TensorFlow
-  db.createEdge('REQUIRES', mlEngineerJob.id, python.id, {
+  db.createEdge(mlEngineerJob.id, 'REQUIRES', python.id, {
     proficiency_required: 'expert'
   });
-  db.createEdge('REQUIRES', mlEngineerJob.id, tensorflow.id, {
+  db.createEdge(mlEngineerJob.id, 'REQUIRES', tensorflow.id, {
     proficiency_required: 'expert'
   });
 
   // DevOps requires Kubernetes, Docker
-  db.createEdge('REQUIRES', devopsJob.id, kubernetes.id, {
+  db.createEdge(devopsJob.id, 'REQUIRES', kubernetes.id, {
     proficiency_required: 'expert'
   });
-  db.createEdge('REQUIRES', devopsJob.id, docker.id, {
+  db.createEdge(devopsJob.id, 'REQUIRES', docker.id, {
     proficiency_required: 'expert'
   });
 
   // Junior Dev requires TypeScript, React
-  db.createEdge('REQUIRES', juniorDevJob.id, typescript.id, {
+  db.createEdge(juniorDevJob.id, 'REQUIRES', typescript.id, {
     proficiency_required: 'basic'
   });
-  db.createEdge('REQUIRES', juniorDevJob.id, react.id, {
+  db.createEdge(juniorDevJob.id, 'REQUIRES', react.id, {
     proficiency_required: 'intermediate'
   });
 
   console.log(`✓ Created relationships (POSTED_BY, REQUIRES)`);
 
   // Create HAS_SKILL relationships (user → skills)
-  db.createEdge('HAS_SKILL', jobSeeker.id, typescript.id, {
+  db.createEdge(jobSeeker.id, 'HAS_SKILL', typescript.id, {
     proficiency: 'expert',
     years_experience: 4
   });
-  db.createEdge('HAS_SKILL', jobSeeker.id, react.id, {
+  db.createEdge(jobSeeker.id, 'HAS_SKILL', react.id, {
     proficiency: 'expert',
     years_experience: 3
   });
-  db.createEdge('HAS_SKILL', jobSeeker.id, python.id, {
+  db.createEdge(jobSeeker.id, 'HAS_SKILL', python.id, {
     proficiency: 'intermediate',
     years_experience: 2
   });
-  db.createEdge('HAS_SKILL', jobSeeker.id, docker.id, {
+  db.createEdge(jobSeeker.id, 'HAS_SKILL', docker.id, {
     proficiency: 'intermediate',
     years_experience: 2
   });
@@ -273,11 +273,11 @@ const { companies, jobs, skills, user } = db.transaction((ctx) => {
   console.log(`✓ Created user skill relationships`);
 
   // Create SIMILAR_TO relationships between jobs
-  db.createEdge('SIMILAR_TO', seniorDevJob.id, juniorDevJob.id, {
+  db.createEdge(seniorDevJob.id, 'SIMILAR_TO', juniorDevJob.id, {
     similarity_score: 0.75,
     reason: 'Same tech stack, different experience level'
   });
-  db.createEdge('SIMILAR_TO', devopsJob.id, seniorDevJob.id, {
+  db.createEdge(devopsJob.id, 'SIMILAR_TO', seniorDevJob.id, {
     similarity_score: 0.45,
     reason: 'Both require Docker/infrastructure knowledge'
   });
@@ -319,10 +319,10 @@ const applications = db.transaction((ctx) => {
     notes: 'Great culture fit, strong technical match',
     interview_count: 2
   });
-  db.createEdge('APPLIED_TO', user.id, jobs[0].id, {
+  db.createEdge(user.id, 'APPLIED_TO', jobs[0].id, {
     application_id: seniorDevApp.id
   });
-  db.createEdge('FOR_JOB', seniorDevApp.id, jobs[0].id);
+  db.createEdge(seniorDevApp.id, 'FOR_JOB', jobs[0].id);
   apps.push(seniorDevApp);
   console.log(`✓ Applied to: ${jobs[0].properties.title} at TechCorp`);
 
@@ -333,10 +333,10 @@ const applications = db.transaction((ctx) => {
     notes: 'Interested in ML transition, need to strengthen Python',
     interview_count: 0
   });
-  db.createEdge('APPLIED_TO', user.id, jobs[1].id, {
+  db.createEdge(user.id, 'APPLIED_TO', jobs[1].id, {
     application_id: mlEngineerApp.id
   });
-  db.createEdge('FOR_JOB', mlEngineerApp.id, jobs[1].id);
+  db.createEdge(mlEngineerApp.id, 'FOR_JOB', jobs[1].id);
   apps.push(mlEngineerApp);
   console.log(`✓ Applied to: ${jobs[1].properties.title} at DataInc`);
 
@@ -347,10 +347,10 @@ const applications = db.transaction((ctx) => {
     notes: 'Quick process, received offer',
     interview_count: 1
   });
-  db.createEdge('APPLIED_TO', user.id, jobs[3].id, {
+  db.createEdge(user.id, 'APPLIED_TO', jobs[3].id, {
     application_id: juniorDevApp.id
   });
-  db.createEdge('FOR_JOB', juniorDevApp.id, jobs[3].id);
+  db.createEdge(juniorDevApp.id, 'FOR_JOB', jobs[3].id);
   apps.push(juniorDevApp);
   console.log(`✓ Applied to: ${jobs[3].properties.title} at TechCorp`);
 
@@ -370,7 +370,7 @@ console.log('-'.repeat(80));
 
 // Query 1: Find all active jobs
 console.log('\n📋 Query 1: All Active Job Postings');
-const activeJobs = db.nodes<JobProperties>('Job')
+const activeJobs = db.nodes('Job')
   .where({ status: 'active' })
   .orderBy('salary_max', 'desc')
   .exec();
@@ -386,10 +386,10 @@ activeJobs.forEach((job, i) => {
 
 // Query 2: Find jobs by company
 console.log('\n\n📋 Query 2: Jobs at TechCorp Solutions');
-const techCorpJobs = db.nodes<JobProperties>('Job')
+const techCorpJobs = db.nodes('Job')
   .connectedTo('Company', 'POSTED_BY', 'out')
   .where({ name: 'TechCorp Solutions' })
-  .exec();
+  .exec() as Node<JobProperties>[];
 
 console.log(`TechCorp has ${techCorpJobs.length} open positions:\n`);
 techCorpJobs.forEach((job, i) => {
@@ -398,10 +398,10 @@ techCorpJobs.forEach((job, i) => {
 
 // Query 3: Find jobs requiring specific skills
 console.log('\n\n📋 Query 3: Jobs Requiring TypeScript');
-const typescriptJobs = db.nodes<JobProperties>('Job')
+const typescriptJobs = db.nodes('Job')
   .connectedTo('Skill', 'REQUIRES', 'out')
   .where({ name: 'TypeScript' })
-  .exec();
+  .exec() as Node<JobProperties>[];
 
 console.log(`Found ${typescriptJobs.length} jobs requiring TypeScript:\n`);
 typescriptJobs.forEach((job, i) => {
@@ -414,11 +414,11 @@ console.log(`Analyzing ${user.properties.name}'s skill profile...`);
 
 // Get user's skills
 const userSkills = db.traverse(user.id)
-  .follow('HAS_SKILL', 'out')
-  .exec();
+  .out('HAS_SKILL')
+  .toArray();
 
 console.log(`\nUser has ${userSkills.length} skills in profile:`);
-userSkills.forEach(skill => {
+userSkills.forEach((skill: Node) => {
   console.log(`  • ${skill.properties.name}`);
 });
 
@@ -426,11 +426,11 @@ userSkills.forEach(skill => {
 console.log(`\nJobs matching user's skills:\n`);
 const matchingJobs = new Map<number, { job: Node<JobProperties>, matchCount: number, skills: string[] }>();
 
-userSkills.forEach(skill => {
-  const jobsForSkill = db.nodes<JobProperties>('Job')
+userSkills.forEach((skill: Node) => {
+  const jobsForSkill = db.nodes('Job')
     .connectedTo('Skill', 'REQUIRES', 'out')
     .where({ id: skill.id })
-    .exec();
+    .exec() as Node<JobProperties>[];
 
   jobsForSkill.forEach(job => {
     if (!matchingJobs.has(job.id)) {
@@ -454,7 +454,7 @@ sortedMatches.forEach((match, i) => {
 
 // Query 5: Application status tracking
 console.log('\n\n📋 Query 5: Application Status Dashboard');
-const allApplications = db.nodes<ApplicationProperties>('Application').exec();
+const allApplications = db.nodes('Application').exec() as Node<ApplicationProperties>[];
 
 console.log(`\nApplication Pipeline Status:\n`);
 
@@ -471,8 +471,8 @@ Object.entries(statusGroups).forEach(([status, apps]) => {
   apps.forEach(app => {
     // Get the job for this application
     const jobNodes = db.traverse(app.id)
-      .follow('FOR_JOB', 'out')
-      .exec();
+      .out('FOR_JOB')
+      .toArray();
     if (jobNodes.length > 0) {
       const job = jobNodes[0] as Node<JobProperties>;
       console.log(`    • ${job.properties.title} (Applied: ${app.properties.applied_date})`);
@@ -495,11 +495,11 @@ const seniorDevJob = jobs[0];
 console.log(`Starting from: ${seniorDevJob.properties.title}\n`);
 
 const similarJobs = db.traverse(seniorDevJob.id)
-  .follow('SIMILAR_TO', 'both')
-  .exec();
+  .both('SIMILAR_TO')
+  .toArray();
 
 console.log(`Found ${similarJobs.length} similar job(s):\n`);
-similarJobs.forEach((job, i) => {
+similarJobs.forEach((job: Node, i: number) => {
   const typedJob = job as Node<JobProperties>;
   console.log(`  ${i + 1}. ${typedJob.properties.title}`);
   console.log(`     ${typedJob.properties.experience_level} level | ${typedJob.properties.location}`);
@@ -536,18 +536,18 @@ console.log(`Starting from: ${mlJob.properties.title}`);
 
 // First, get the company
 const company = db.traverse(mlJob.id)
-  .follow('POSTED_BY', 'out')
-  .exec()[0] as Node<CompanyProperties>;
+  .out('POSTED_BY')
+  .toArray()[0] as Node<CompanyProperties>;
 
 console.log(`Company: ${company.properties.name}\n`);
 
 // Then find all jobs at this company
 const companyJobs = db.traverse(company.id)
-  .follow('POSTED_BY', 'in')
-  .exec();
+  .in('POSTED_BY')
+  .toArray();
 
 console.log(`All positions at ${company.properties.name}:\n`);
-companyJobs.forEach((job, i) => {
+companyJobs.forEach((job: Node, i: number) => {
   const typedJob = job as Node<JobProperties>;
   console.log(`  ${i + 1}. ${typedJob.properties.title}`);
   console.log(`     ${typedJob.properties.experience_level} | Status: ${typedJob.properties.status}`);
@@ -561,9 +561,9 @@ console.log('-'.repeat(80));
 
 // Advanced Query 1: Remote jobs with high salary
 console.log('\n💼 Query 1: Premium Remote Positions');
-const premiumRemote = db.nodes<JobProperties>('Job')
+const premiumRemote = (db.nodes('Job')
   .where({ remote: true, status: 'active' })
-  .exec()
+  .exec() as Node<JobProperties>[])
   .filter(job => (job.properties.salary_max || 0) >= 150000)
   .sort((a, b) => (b.properties.salary_max || 0) - (a.properties.salary_max || 0));
 
@@ -576,11 +576,11 @@ premiumRemote.forEach((job, i) => {
 
 // Advanced Query 2: Skills in high demand
 console.log('\n\n📈 Query 2: Most In-Demand Skills');
-const allSkills = db.nodes<SkillProperties>('Skill').exec();
+const allSkills = db.nodes('Skill').exec() as Node<SkillProperties>[];
 
 const skillDemand = allSkills.map(skill => {
   // Count how many jobs require this skill
-  const jobCount = db.nodes<JobProperties>('Job')
+  const jobCount = db.nodes('Job')
     .connectedTo('Skill', 'REQUIRES', 'out')
     .where({ id: skill.id })
     .count();
@@ -597,7 +597,7 @@ skillDemand.forEach(({ skill, jobCount }, i) => {
 // Advanced Query 3: Company comparison
 console.log('\n\n🏢 Query 3: Company Comparison');
 const companyStats = companies.map(company => {
-  const jobCount = db.nodes<JobProperties>('Job')
+  const jobCount = db.nodes('Job')
     .connectedTo('Company', 'POSTED_BY', 'out')
     .where({ id: company.id })
     .count();
@@ -632,7 +632,7 @@ db.transaction((ctx) => {
     status: 'offer',
     interview_count: 3,
     notes: 'Received offer after final round!'
-  });
+  }) as Node<ApplicationProperties>;
   console.log(`✓ Updated ${jobs[0].properties.title} application:`);
   console.log(`  Status: ${updatedNode.properties.status}`);
   console.log(`  Interviews completed: ${updatedNode.properties.interview_count}`);
@@ -656,7 +656,7 @@ db.transaction((ctx) => {
 console.log('\n\n📋 STEP 7: Final Application Report');
 console.log('-'.repeat(80));
 
-const finalApps = db.nodes<ApplicationProperties>('Application').exec();
+const finalApps = db.nodes('Application').exec() as Node<ApplicationProperties>[];
 
 console.log(`\n${user.properties.name}'s Job Search Summary:`);
 console.log(`Email: ${user.properties.email}`);
@@ -688,10 +688,10 @@ const offerApps = finalApps.filter(app => app.properties.status === 'offer');
 if (offerApps.length > 0) {
   console.log('\n🎉 Outstanding Offers:\n');
   offerApps.forEach(app => {
-    const jobNodes = db.traverse(app.id).follow('FOR_JOB', 'out').exec();
+    const jobNodes = db.traverse(app.id).out('FOR_JOB').toArray();
     if (jobNodes.length > 0) {
       const job = jobNodes[0] as Node<JobProperties>;
-      const companyNodes = db.traverse(job.id).follow('POSTED_BY', 'out').exec();
+      const companyNodes = db.traverse(job.id).out('POSTED_BY').toArray();
       const company = companyNodes[0] as Node<CompanyProperties>;
 
       console.log(`  • ${job.properties.title} at ${company.properties.name}`);
