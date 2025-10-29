@@ -27,10 +27,10 @@ describe('Complex Graph Operations - Integration Tests', () => {
         d: db.createNode('Node', { label: 'D', value: 4 })
       };
 
-      db.createEdge('LINKS_TO', nodes.a.id, nodes.b.id, { weight: 1 });
-      db.createEdge('LINKS_TO', nodes.b.id, nodes.c.id, { weight: 2 });
-      db.createEdge('LINKS_TO', nodes.c.id, nodes.d.id, { weight: 3 });
-      db.createEdge('LINKS_TO', nodes.d.id, nodes.a.id, { weight: 4 }); // Cycle
+      db.createEdge(nodes.a.id, 'LINKS_TO', nodes.b.id, { weight: 1 });
+      db.createEdge(nodes.b.id, 'LINKS_TO', nodes.c.id, { weight: 2 });
+      db.createEdge(nodes.c.id, 'LINKS_TO', nodes.d.id, { weight: 3 });
+      db.createEdge(nodes.d.id, 'LINKS_TO', nodes.a.id, { weight: 4 }); // Cycle
 
       // Step 2: Query and transform
       const allNodes = db.nodes('Node').exec();
@@ -64,7 +64,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
 
         twoHopNeighbors.forEach(neighbor => {
           // Create "indirect" relationship
-          db.createEdge('INDIRECT', node.id, neighbor.id, { hops: 2 });
+          db.createEdge(node.id, 'INDIRECT', neighbor.id, { hops: 2 });
         });
       });
 
@@ -82,14 +82,14 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const languages = db.createNode('Category', { name: 'Languages', level: 1 });
       const frameworks = db.createNode('Category', { name: 'Frameworks', level: 1 });
 
-      db.createEdge('PARENT_OF', programming.id, languages.id);
-      db.createEdge('PARENT_OF', programming.id, frameworks.id);
+      db.createEdge(programming.id, 'PARENT_OF', languages.id);
+      db.createEdge(programming.id, 'PARENT_OF', frameworks.id);
 
       const webLangs = db.createNode('Category', { name: 'Web Languages', level: 2 });
       const systemsLangs = db.createNode('Category', { name: 'Systems Languages', level: 2 });
 
-      db.createEdge('PARENT_OF', languages.id, webLangs.id);
-      db.createEdge('PARENT_OF', languages.id, systemsLangs.id);
+      db.createEdge(languages.id, 'PARENT_OF', webLangs.id);
+      db.createEdge(languages.id, 'PARENT_OF', systemsLangs.id);
 
       // Add actual skills
       const js = db.createNode('Skill', { name: 'JavaScript' });
@@ -97,10 +97,10 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const rust = db.createNode('Skill', { name: 'Rust' });
       const react = db.createNode('Skill', { name: 'React' });
 
-      db.createEdge('BELONGS_TO', js.id, webLangs.id);
-      db.createEdge('BELONGS_TO', ts.id, webLangs.id);
-      db.createEdge('BELONGS_TO', rust.id, systemsLangs.id);
-      db.createEdge('BELONGS_TO', react.id, frameworks.id);
+      db.createEdge(js.id, 'BELONGS_TO', webLangs.id);
+      db.createEdge(ts.id, 'BELONGS_TO', webLangs.id);
+      db.createEdge(rust.id, 'BELONGS_TO', systemsLangs.id);
+      db.createEdge(react.id, 'BELONGS_TO', frameworks.id);
 
       // Query all skills under "Languages" category
       const languageCategories = db.traverse(languages.id)
@@ -148,7 +148,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
       // Link jobs to companies
       jobs.forEach((job, i) => {
         const company = companies[i % companies.length];
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
       });
 
       // Complex aggregation: average salary by company size
@@ -226,7 +226,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
 
         try {
           const job1 = db.createNode('Job', { title: 'Job 1' });
-          db.createEdge('POSTED_BY', job1.id, company.id);
+          db.createEdge(job1.id, 'POSTED_BY', company.id);
 
           ctx.savepoint('job1_created');
 
@@ -235,14 +235,14 @@ describe('Complex Graph Operations - Integration Tests', () => {
           if (job2.properties.title === 'Job 2') {
             throw new Error('Simulated error');
           }
-          db.createEdge('POSTED_BY', job2.id, company.id);
+          db.createEdge(job2.id, 'POSTED_BY', company.id);
         } catch (error) {
           // Rollback to after job1
           ctx.rollbackTo('job1_created');
 
           // Create alternative job2
           const job2Alt = db.createNode('Job', { title: 'Job 2 Alt' });
-          db.createEdge('POSTED_BY', job2Alt.id, company.id);
+          db.createEdge(job2Alt.id, 'POSTED_BY', company.id);
         }
 
         return company.id;
@@ -267,7 +267,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
         // Inner operation 1
         db.transaction(innerCtx => {
           const task1 = db.createNode('Task', { title: 'Task 1' });
-          db.createEdge('PART_OF', task1.id, project.id);
+          db.createEdge(task1.id, 'PART_OF', project.id);
         });
 
         ctx.savepoint('task1');
@@ -275,7 +275,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
         // Inner operation 2
         db.transaction(innerCtx => {
           const task2 = db.createNode('Task', { title: 'Task 2' });
-          db.createEdge('PART_OF', task2.id, project.id);
+          db.createEdge(task2.id, 'PART_OF', project.id);
         });
 
         // Verify both tasks exist
@@ -297,7 +297,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
           const node1 = db.createNode('Node', { label: 'Node 1' });
           const node2 = db.createNode('Node', { label: 'Node 2' });
 
-          db.createEdge('LINKS', node1.id, node2.id);
+          db.createEdge(node1.id, 'LINKS', node2.id);
 
           // Create savepoint
           ctx.savepoint('after_nodes');
@@ -322,8 +322,8 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const job = db.createNode('Job', { title: 'Engineer', salary: 150000 });
       const skill = db.createNode('Skill', { name: 'TypeScript', category: 'programming' });
 
-      db.createEdge('POSTED_BY', job.id, company.id);
-      db.createEdge('REQUIRES', job.id, skill.id, { level: 'expert' });
+      db.createEdge(job.id, 'POSTED_BY', company.id);
+      db.createEdge(job.id, 'REQUIRES', skill.id, { level: 'expert' });
 
       // Export
       const exported = db.export();
@@ -366,7 +366,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
       nodes.forEach((node, i) => {
         for (let j = 1; j <= 3; j++) {
           const targetIndex = (i + j) % nodeCount;
-          db.createEdge('LINKS', node.id, nodes[targetIndex].id, { weight: j });
+          db.createEdge(node.id, 'LINKS', nodes[targetIndex].id, { weight: j });
         }
       });
 
@@ -436,13 +436,13 @@ describe('Complex Graph Operations - Integration Tests', () => {
       // Initial data
       const company = db.createNode('Company', { name: 'Company A', id: 'comp-a' });
       const job1 = db.createNode('Job', { title: 'Job 1', id: 'job-1' });
-      db.createEdge('POSTED_BY', job1.id, company.id);
+      db.createEdge(job1.id, 'POSTED_BY', company.id);
 
       const export1 = db.export();
 
       // Add more data
       const job2 = db.createNode('Job', { title: 'Job 2', id: 'job-2' });
-      db.createEdge('POSTED_BY', job2.id, company.id);
+      db.createEdge(job2.id, 'POSTED_BY', company.id);
 
       // Export again - this will include all data
       const export2 = db.export();
@@ -477,11 +477,11 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const d = db.createNode('Node', { label: 'D' });
       const e = db.createNode('Node', { label: 'E' });
 
-      db.createEdge('LINKS', a.id, b.id);
-      db.createEdge('LINKS', b.id, c.id);
-      db.createEdge('LINKS', c.id, d.id);
-      db.createEdge('LINKS', a.id, e.id);
-      db.createEdge('LINKS', e.id, d.id);
+      db.createEdge(a.id, 'LINKS', b.id);
+      db.createEdge(b.id, 'LINKS', c.id);
+      db.createEdge(c.id, 'LINKS', d.id);
+      db.createEdge(a.id, 'LINKS', e.id);
+      db.createEdge(e.id, 'LINKS', d.id);
 
       // Find shortest path from A to D
       const path = db.traverse(a.id).shortestPath(d.id);
@@ -500,9 +500,9 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const b = db.createNode('Node', { label: 'B' });
       const c = db.createNode('Node', { label: 'C' });
 
-      db.createEdge('LINKS', a.id, b.id);
-      db.createEdge('LINKS', b.id, c.id);
-      db.createEdge('LINKS', c.id, a.id);
+      db.createEdge(a.id, 'LINKS', b.id);
+      db.createEdge(b.id, 'LINKS', c.id);
+      db.createEdge(c.id, 'LINKS', a.id);
 
       // Traverse with cycle detection (limited depth)
       const visited = new Set();
@@ -531,10 +531,10 @@ describe('Complex Graph Operations - Integration Tests', () => {
       const c = db.createNode('Node', { label: 'C' });
       const d = db.createNode('Node', { label: 'D' });
 
-      db.createEdge('LINKS', a.id, b.id);
-      db.createEdge('LINKS', a.id, c.id);
-      db.createEdge('LINKS', b.id, d.id);
-      db.createEdge('LINKS', c.id, d.id);
+      db.createEdge(a.id, 'LINKS', b.id);
+      db.createEdge(a.id, 'LINKS', c.id);
+      db.createEdge(b.id, 'LINKS', d.id);
+      db.createEdge(c.id, 'LINKS', d.id);
 
       // Find all paths using traversal
       const paths = db.traverse(a.id)
@@ -561,8 +561,8 @@ describe('Complex Graph Operations - Integration Tests', () => {
       );
 
       outer.forEach(node => {
-        db.createEdge('LINKS', center.id, node.id);
-        db.createEdge('LINKS', node.id, center.id);
+        db.createEdge(center.id, 'LINKS', node.id);
+        db.createEdge(node.id, 'LINKS', center.id);
       });
 
       // Calculate degree centrality
@@ -612,7 +612,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
         nodes.forEach((from, i) => {
           nodes.forEach((to, j) => {
             if (i !== j) {
-              db.createEdge('LINKS', from.id, to.id);
+              db.createEdge(from.id, 'LINKS', to.id);
             }
           });
         });
@@ -637,7 +637,7 @@ describe('Complex Graph Operations - Integration Tests', () => {
       );
 
       children.forEach(child => {
-        db.createEdge('PARENT_OF', root.id, child.id);
+        db.createEdge(root.id, 'PARENT_OF', child.id);
       });
 
       // Invariant: Each child has exactly one parent

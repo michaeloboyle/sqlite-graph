@@ -60,16 +60,16 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
 
       // 4. Create relationships
-      db.createEdge('POSTED_BY', seniorJob.id, techCorp.id);
-      db.createEdge('POSTED_BY', midLevelJob.id, startupInc.id);
+      db.createEdge(seniorJob.id, 'POSTED_BY', techCorp.id);
+      db.createEdge(midLevelJob.id, 'POSTED_BY', startupInc.id);
 
-      db.createEdge('REQUIRES', seniorJob.id, typescript.id, { level: 'expert', required: true });
-      db.createEdge('REQUIRES', seniorJob.id, react.id, { level: 'expert', required: true });
-      db.createEdge('REQUIRES', seniorJob.id, nodejs.id, { level: 'advanced', required: true });
-      db.createEdge('REQUIRES', seniorJob.id, graphql.id, { level: 'intermediate', required: false });
+      db.createEdge(seniorJob.id, 'REQUIRES', typescript.id, { level: 'expert', required: true });
+      db.createEdge(seniorJob.id, 'REQUIRES', react.id, { level: 'expert', required: true });
+      db.createEdge(seniorJob.id, 'REQUIRES', nodejs.id, { level: 'advanced', required: true });
+      db.createEdge(seniorJob.id, 'REQUIRES', graphql.id, { level: 'intermediate', required: false });
 
-      db.createEdge('REQUIRES', midLevelJob.id, nodejs.id, { level: 'intermediate', required: true });
-      db.createEdge('REQUIRES', midLevelJob.id, graphql.id, { level: 'beginner', required: false });
+      db.createEdge(midLevelJob.id, 'REQUIRES', nodejs.id, { level: 'intermediate', required: true });
+      db.createEdge(midLevelJob.id, 'REQUIRES', graphql.id, { level: 'beginner', required: false });
 
       // 5. Query for suitable jobs (remote, good salary)
       const discoveredJobs = db.nodes('Job')
@@ -145,7 +145,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
           status: 'discovered'
         });
 
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
 
         // Move through application stages
         db.updateNode(job.id, { status: 'interested' });
@@ -187,7 +187,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
 
       jobs.forEach(jobData => {
         const job = db.createNode('Job', jobData);
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
       });
 
       // Query active pipeline (not rejected/withdrawn)
@@ -230,23 +230,23 @@ describe('Job Application Pipeline - Integration Tests', () => {
         title: 'Frontend Engineer',
         status: 'active'
       });
-      db.createEdge('REQUIRES', frontendJob.id, ts.id);
-      db.createEdge('REQUIRES', frontendJob.id, react.id);
+      db.createEdge(frontendJob.id, 'REQUIRES', ts.id);
+      db.createEdge(frontendJob.id, 'REQUIRES', react.id);
 
       const backendJob = db.createNode('Job', {
         title: 'Backend Engineer',
         status: 'active'
       });
-      db.createEdge('REQUIRES', backendJob.id, python.id);
-      db.createEdge('REQUIRES', backendJob.id, go.id);
+      db.createEdge(backendJob.id, 'REQUIRES', python.id);
+      db.createEdge(backendJob.id, 'REQUIRES', go.id);
 
       const fullstackJob = db.createNode('Job', {
         title: 'Fullstack Engineer',
         status: 'active'
       });
-      db.createEdge('REQUIRES', fullstackJob.id, ts.id);
-      db.createEdge('REQUIRES', fullstackJob.id, react.id);
-      db.createEdge('REQUIRES', fullstackJob.id, python.id);
+      db.createEdge(fullstackJob.id, 'REQUIRES', ts.id);
+      db.createEdge(fullstackJob.id, 'REQUIRES', react.id);
+      db.createEdge(fullstackJob.id, 'REQUIRES', python.id);
 
       // Find jobs requiring TypeScript - get all active jobs first, then filter by skills
       const allActiveJobs = db.nodes('Job')
@@ -277,11 +277,11 @@ describe('Job Application Pipeline - Integration Tests', () => {
         status: 'active'
       });
 
-      db.createEdge('REQUIRES', job.id, skillNodes[0].id); // TypeScript
-      db.createEdge('REQUIRES', job.id, skillNodes[1].id); // React
-      db.createEdge('REQUIRES', job.id, skillNodes[2].id); // Node.js
-      db.createEdge('REQUIRES', job.id, db.createNode('Skill', { name: 'GraphQL' }).id);
-      db.createEdge('REQUIRES', job.id, db.createNode('Skill', { name: 'Docker' }).id);
+      db.createEdge(job.id, 'REQUIRES', skillNodes[0].id); // TypeScript
+      db.createEdge(job.id, 'REQUIRES', skillNodes[1].id); // React
+      db.createEdge(job.id, 'REQUIRES', skillNodes[2].id); // Node.js
+      db.createEdge(job.id, 'REQUIRES', db.createNode('Skill', { name: 'GraphQL' }).id);
+      db.createEdge(job.id, 'REQUIRES', db.createNode('Skill', { name: 'Docker' }).id);
 
       // Calculate match percentage
       const requiredSkills = db.traverse(job.id).out('REQUIRES').toArray();
@@ -320,7 +320,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       );
 
       jobs.forEach(job => {
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
       });
 
       // Analyze company's job postings
@@ -347,20 +347,20 @@ describe('Job Application Pipeline - Integration Tests', () => {
 
       // Create jobs with overlapping skills
       const job1 = db.createNode('Job', { title: 'Job 1', status: 'active' });
-      db.createEdge('REQUIRES', job1.id, ts.id);
-      db.createEdge('REQUIRES', job1.id, react.id);
-      db.createEdge('REQUIRES', job1.id, node.id);
+      db.createEdge(job1.id, 'REQUIRES', ts.id);
+      db.createEdge(job1.id, 'REQUIRES', react.id);
+      db.createEdge(job1.id, 'REQUIRES', node.id);
 
       const job2 = db.createNode('Job', { title: 'Job 2', status: 'active' });
-      db.createEdge('REQUIRES', job2.id, ts.id);
-      db.createEdge('REQUIRES', job2.id, react.id);
-      db.createEdge('REQUIRES', job2.id, python.id);
+      db.createEdge(job2.id, 'REQUIRES', ts.id);
+      db.createEdge(job2.id, 'REQUIRES', react.id);
+      db.createEdge(job2.id, 'REQUIRES', python.id);
 
       const job3 = db.createNode('Job', { title: 'Job 3', status: 'active' });
-      db.createEdge('REQUIRES', job3.id, python.id);
+      db.createEdge(job3.id, 'REQUIRES', python.id);
 
       // Add explicit similarity relationship
-      db.createEdge('SIMILAR_TO', job1.id, job2.id, { reason: 'skill_overlap', similarity: 0.8 });
+      db.createEdge(job1.id, 'SIMILAR_TO', job2.id, { reason: 'skill_overlap', similarity: 0.8 });
 
       // Find similar jobs
       const similarJobs = db.traverse(job1.id)
@@ -391,7 +391,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         appliedAt: new Date('2025-01-01').toISOString()
       });
 
-      db.createEdge('POSTED_BY', job.id, company.id);
+      db.createEdge(job.id, 'POSTED_BY', company.id);
 
       // Create interview rounds as separate nodes
       const screening = db.createNode('Interview', {
@@ -427,10 +427,10 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
 
       // Link interviews to job
-      db.createEdge('HAS_INTERVIEW', job.id, screening.id, { sequence: 1 });
-      db.createEdge('HAS_INTERVIEW', job.id, technical.id, { sequence: 2 });
-      db.createEdge('HAS_INTERVIEW', job.id, behavioral.id, { sequence: 3 });
-      db.createEdge('HAS_INTERVIEW', job.id, onsite.id, { sequence: 4 });
+      db.createEdge(job.id, 'HAS_INTERVIEW', screening.id, { sequence: 1 });
+      db.createEdge(job.id, 'HAS_INTERVIEW', technical.id, { sequence: 2 });
+      db.createEdge(job.id, 'HAS_INTERVIEW', behavioral.id, { sequence: 3 });
+      db.createEdge(job.id, 'HAS_INTERVIEW', onsite.id, { sequence: 4 });
 
       // Update job status
       db.updateNode(job.id, { status: 'interviewing', currentRound: 'onsite' });
@@ -458,7 +458,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         status: 'interviewing'
       });
 
-      db.createEdge('POSTED_BY', job.id, company.id);
+      db.createEdge(job.id, 'POSTED_BY', company.id);
 
       // Create offer node
       const offer = db.createNode('Offer', {
@@ -470,7 +470,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         deadline: new Date('2025-02-20').toISOString()
       });
 
-      db.createEdge('RECEIVED_OFFER', job.id, offer.id);
+      db.createEdge(job.id, 'RECEIVED_OFFER', offer.id);
 
       // Update job status
       db.updateNode(job.id, {
@@ -486,7 +486,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         reasoning: 'Market rate for Principal Engineer with 10+ years experience'
       });
 
-      db.createEdge('COUNTERED_WITH', offer.id, counter.id);
+      db.createEdge(offer.id, 'COUNTERED_WITH', counter.id);
 
       // Verify offer chain
       const offers = db.traverse(job.id)
@@ -510,8 +510,8 @@ describe('Job Application Pipeline - Integration Tests', () => {
       const job = db.createNode('Job', { title: 'Test Job' });
       const skill = db.createNode('Skill', { name: 'Testing' });
 
-      db.createEdge('POSTED_BY', job.id, company.id);
-      db.createEdge('REQUIRES', job.id, skill.id);
+      db.createEdge(job.id, 'POSTED_BY', company.id);
+      db.createEdge(job.id, 'REQUIRES', skill.id);
 
       // Delete job (edges should be automatically deleted via CASCADE)
       const deleted = db.deleteNode(job.id);
@@ -553,11 +553,11 @@ describe('Job Application Pipeline - Integration Tests', () => {
       const job = db.createNode('Job', { title: 'Multi-Company Job' });
 
       // Job can only be posted by one company (business logic, not enforced by DB)
-      db.createEdge('POSTED_BY', job.id, company1.id);
+      db.createEdge(job.id, 'POSTED_BY', company1.id);
 
       // This would violate business logic - should be prevented by application layer
       // For this test, we just verify the database allows it but application should prevent
-      db.createEdge('POSTED_BY', job.id, company2.id);
+      db.createEdge(job.id, 'POSTED_BY', company2.id);
 
       const companies = db.traverse(job.id).out('POSTED_BY').toArray();
       // Database allows multiple edges, but application should enforce single company
@@ -595,13 +595,13 @@ describe('Job Application Pipeline - Integration Tests', () => {
       // Create relationships
       jobs.forEach((job, i) => {
         const company = companies[i % companies.length];
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
 
         // Add 2-4 skills per job
         const skillCount = 2 + (i % 3);
         for (let j = 0; j < skillCount; j++) {
           const skill = skills[(i + j) % skills.length];
-          db.createEdge('REQUIRES', job.id, skill.id);
+          db.createEdge(job.id, 'REQUIRES', skill.id);
         }
       });
 

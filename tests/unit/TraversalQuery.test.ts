@@ -44,15 +44,15 @@ describe('TraversalQuery', () => {
     const f = db.createNode('Node', { name: 'F', level: 2 });
 
     // Create edges
-    db.createEdge('LINKS', a.id, b.id);
-    db.createEdge('LINKS', a.id, c.id);
-    db.createEdge('LINKS', a.id, d.id);
-    db.createEdge('LINKS', b.id, e.id);
-    db.createEdge('LINKS', c.id, e.id);
-    db.createEdge('LINKS', c.id, f.id);
+    db.createEdge(a.id, 'LINKS', b.id);
+    db.createEdge(a.id, 'LINKS', c.id);
+    db.createEdge(a.id, 'LINKS', d.id);
+    db.createEdge(b.id, 'LINKS', e.id);
+    db.createEdge(c.id, 'LINKS', e.id);
+    db.createEdge(c.id, 'LINKS', f.id);
 
     // Create cycle: F -> C
-    db.createEdge('LINKS', f.id, c.id);
+    db.createEdge(f.id, 'LINKS', c.id);
 
     // Store for tests
     testNodeIds = {
@@ -84,7 +84,7 @@ describe('TraversalQuery', () => {
     it('should respect node type filter in out()', () => {
       // Add a different type node
       const special = db.createNode('Special', { name: 'Special' });
-      db.createEdge('LINKS', testNodeIds.a, special.id);
+      db.createEdge(testNodeIds.a, 'LINKS', special.id);
 
       const nodes = db.traverse(testNodeIds.a)
         .out('LINKS', 'Node')
@@ -135,7 +135,7 @@ describe('TraversalQuery', () => {
 
     it('should respect node type filter in in()', () => {
       const special = db.createNode('Special', { name: 'Special' });
-      db.createEdge('LINKS', special.id, testNodeIds.e);
+      db.createEdge(special.id, 'LINKS', testNodeIds.e);
 
       const nodes = db.traverse(testNodeIds.e)
         .in('LINKS', 'Node')
@@ -185,8 +185,8 @@ describe('TraversalQuery', () => {
 
     it('should respect node type filter in both()', () => {
       const special = db.createNode('Special', { name: 'Special' });
-      db.createEdge('LINKS', special.id, testNodeIds.c);
-      db.createEdge('LINKS', testNodeIds.c, special.id);
+      db.createEdge(special.id, 'LINKS', testNodeIds.c);
+      db.createEdge(testNodeIds.c, 'LINKS', special.id);
 
       const nodes = db.traverse(testNodeIds.c)
         .both('LINKS', 'Node')
@@ -498,7 +498,7 @@ describe('TraversalQuery', () => {
 
     it('should handle self-referencing nodes', () => {
       const self = db.createNode('Node', { name: 'Self' });
-      db.createEdge('LINKS', self.id, self.id);
+      db.createEdge(self.id, 'LINKS', self.id);
 
       const paths = db.traverse(self.id)
         .out('LINKS')
@@ -703,7 +703,7 @@ describe('TraversalQuery', () => {
 
     it('should handle graphs with multiple edge types', () => {
       // Add different edge type
-      db.createEdge('SPECIAL', testNodeIds.a, testNodeIds.b);
+      db.createEdge(testNodeIds.a, 'SPECIAL', testNodeIds.b);
 
       const linkNodes = db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -793,7 +793,7 @@ describe('TraversalQuery', () => {
       // Create 50 child nodes
       for (let i = 0; i < 50; i++) {
         const child = db.createNode('Node', { name: `Child${i}` });
-        db.createEdge('LINKS', root.id, child.id);
+        db.createEdge(root.id, 'LINKS', child.id);
       }
 
       const nodes = db.traverse(root.id)
@@ -810,9 +810,9 @@ describe('TraversalQuery', () => {
       const y = db.createNode('Node', { name: 'Y' });
       const z = db.createNode('Node', { name: 'Z' });
 
-      db.createEdge('LINKS', x.id, y.id);
-      db.createEdge('LINKS', y.id, z.id);
-      db.createEdge('LINKS', z.id, x.id);
+      db.createEdge(x.id, 'LINKS', y.id);
+      db.createEdge(y.id, 'LINKS', z.id);
+      db.createEdge(z.id, 'LINKS', x.id);
 
       // Should complete without hanging
       const paths = db.traverse(x.id)

@@ -17,10 +17,10 @@ describe('NodeQuery - Both Direction Support', () => {
     const charlie = db.createNode('Person', { name: 'Charlie' });
     const david = db.createNode('Person', { name: 'David' });
 
-    db.createEdge('KNOWS', alice.id, bob.id);
-    db.createEdge('KNOWS', bob.id, alice.id);
-    db.createEdge('KNOWS', alice.id, charlie.id);
-    db.createEdge('KNOWS', david.id, alice.id);
+    db.createEdge(alice.id, 'KNOWS', bob.id);
+    db.createEdge(bob.id, 'KNOWS', alice.id);
+    db.createEdge(alice.id, 'KNOWS', charlie.id);
+    db.createEdge(david.id, 'KNOWS', alice.id);
   });
 
   afterEach(() => {
@@ -68,9 +68,9 @@ describe('NodeQuery - Both Direction Support', () => {
     const job3 = db.createNode('Job', { title: 'Job 3' });
     const job4 = db.createNode('Job', { title: 'Job 4' });
 
-    db.createEdge('SIMILAR_TO', job1.id, job2.id);
-    db.createEdge('SIMILAR_TO', job3.id, job2.id);
-    db.createEdge('SIMILAR_TO', job2.id, job4.id);
+    db.createEdge(job1.id, 'SIMILAR_TO', job2.id);
+    db.createEdge(job3.id, 'SIMILAR_TO', job2.id);
+    db.createEdge(job2.id, 'SIMILAR_TO', job4.id);
 
     // Find jobs that have SIMILAR_TO connections in both directions to Job type nodes
     // Starting from Job2, it should find jobs connected in either direction
@@ -97,17 +97,17 @@ describe('NodeQuery - Both Direction Support', () => {
     const job3 = db.createNode('Job', { title: 'Job 3', status: 'inactive' });
 
     // Company1 -> Job1 (POSTED_BY)
-    db.createEdge('POSTED_BY', job1.id, company1.id);
+    db.createEdge(job1.id, 'POSTED_BY', company1.id);
     // Company2 -> Job2 (POSTED_BY)
-    db.createEdge('POSTED_BY', job2.id, company2.id);
+    db.createEdge(job2.id, 'POSTED_BY', company2.id);
     // Company3 -> Job3 (POSTED_BY) - inactive
-    db.createEdge('POSTED_BY', job3.id, company3.id);
+    db.createEdge(job3.id, 'POSTED_BY', company3.id);
 
     // Also create reverse edges for partnership
     // Company1 -> Company2 (PARTNERS_WITH)
     // Company2 -> Company1 (PARTNERS_WITH)
-    db.createEdge('PARTNERS_WITH', company1.id, company2.id);
-    db.createEdge('PARTNERS_WITH', company2.id, company1.id);
+    db.createEdge(company1.id, 'PARTNERS_WITH', company2.id);
+    db.createEdge(company2.id, 'PARTNERS_WITH', company1.id);
 
     // Find companies connected to other companies via PARTNERS_WITH in both directions
     const partners = db.nodes('Company')
@@ -127,11 +127,11 @@ describe('NodeQuery - Both Direction Support', () => {
     const person3 = db.createNode('Person', { name: 'Person 3' });
 
     // Bidirectional friendship
-    db.createEdge('FRIENDS_WITH', person1.id, person2.id);
-    db.createEdge('FRIENDS_WITH', person2.id, person1.id);
+    db.createEdge(person1.id, 'FRIENDS_WITH', person2.id);
+    db.createEdge(person2.id, 'FRIENDS_WITH', person1.id);
 
     // One-way friendship
-    db.createEdge('FRIENDS_WITH', person1.id, person3.id);
+    db.createEdge(person1.id, 'FRIENDS_WITH', person3.id);
 
     // Query for people who have FRIENDS_WITH connections (both directions)
     const results = db.nodes('Person')
@@ -154,17 +154,17 @@ describe('NodeQuery - Both Direction Support', () => {
     const skillNode = db.createNode('Skill', { name: 'Node.js' });
 
     // Job1 requires React
-    db.createEdge('REQUIRES', job1.id, skillReact.id);
+    db.createEdge(job1.id, 'REQUIRES', skillReact.id);
     // React is required by Job1 (reverse for testing 'in')
-    db.createEdge('REQUIRED_BY', skillReact.id, job1.id);
+    db.createEdge(skillReact.id, 'REQUIRED_BY', job1.id);
 
     // Job2 requires Node
-    db.createEdge('REQUIRES', job2.id, skillNode.id);
-    db.createEdge('REQUIRED_BY', skillNode.id, job2.id);
+    db.createEdge(job2.id, 'REQUIRES', skillNode.id);
+    db.createEdge(skillNode.id, 'REQUIRED_BY', job2.id);
 
     // Job3 requires both (but inactive)
-    db.createEdge('REQUIRES', job3.id, skillReact.id);
-    db.createEdge('REQUIRES', job3.id, skillNode.id);
+    db.createEdge(job3.id, 'REQUIRES', skillReact.id);
+    db.createEdge(job3.id, 'REQUIRES', skillNode.id);
 
     // Find active jobs that have skill requirements (either direction)
     const results = db.nodes('Job')
@@ -183,9 +183,9 @@ describe('NodeQuery - Both Direction Support', () => {
     const node2 = db.createNode('Node', { id: 2 });
     const node3 = db.createNode('Node', { id: 3 });
 
-    db.createEdge('LINKS', node1.id, node2.id);
-    db.createEdge('LINKS', node2.id, node1.id);
-    db.createEdge('LINKS', node2.id, node3.id);
+    db.createEdge(node1.id, 'LINKS', node2.id);
+    db.createEdge(node2.id, 'LINKS', node1.id);
+    db.createEdge(node2.id, 'LINKS', node3.id);
 
     const count = db.nodes('Node')
       .connectedTo('Node', 'LINKS', 'both')
@@ -198,7 +198,7 @@ describe('NodeQuery - Both Direction Support', () => {
     const node1 = db.createNode('Node', { id: 1 });
     const node2 = db.createNode('Node', { id: 2 });
 
-    db.createEdge('LINKS', node1.id, node2.id);
+    db.createEdge(node1.id, 'LINKS', node2.id);
 
     const exists = db.nodes('Node')
       .connectedTo('Node', 'LINKS', 'both')

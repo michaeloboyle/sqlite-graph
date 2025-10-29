@@ -50,15 +50,15 @@ describe('NodeQuery', () => {
     const skill3 = db.createNode('Skill', { name: 'React', level: 'advanced' });
 
     // Create relationships
-    db.createEdge('POSTED_BY', job1.id, company1.id);
-    db.createEdge('POSTED_BY', job2.id, company2.id);
-    db.createEdge('POSTED_BY', job3.id, company3.id);
-    db.createEdge('POSTED_BY', job4.id, company1.id);
+    db.createEdge(job1.id, 'POSTED_BY', company1.id);
+    db.createEdge(job2.id, 'POSTED_BY', company2.id);
+    db.createEdge(job3.id, 'POSTED_BY', company3.id);
+    db.createEdge(job4.id, 'POSTED_BY', company1.id);
 
-    db.createEdge('REQUIRES', job1.id, skill1.id);
-    db.createEdge('REQUIRES', job1.id, skill3.id);
-    db.createEdge('REQUIRES', job3.id, skill1.id);
-    db.createEdge('REQUIRES', job3.id, skill2.id);
+    db.createEdge(job1.id, 'REQUIRES', skill1.id);
+    db.createEdge(job1.id, 'REQUIRES', skill3.id);
+    db.createEdge(job3.id, 'REQUIRES', skill1.id);
+    db.createEdge(job3.id, 'REQUIRES', skill2.id);
   });
 
   afterEach(() => {
@@ -682,8 +682,8 @@ describe('NodeQuery', () => {
       // Create bidirectional relationship
       const person1 = db.createNode('Person', { name: 'Alice' });
       const person2 = db.createNode('Person', { name: 'Bob' });
-      db.createEdge('KNOWS', person1.id, person2.id);
-      db.createEdge('KNOWS', person2.id, person1.id);
+      db.createEdge(person1.id, 'KNOWS', person2.id);
+      db.createEdge(person2.id, 'KNOWS', person1.id);
 
       const results = db.nodes('Person')
         .connectedTo('Person', 'KNOWS', 'both')
@@ -790,8 +790,8 @@ describe('NodeQuery', () => {
       // This tests the DISTINCT SQL generation for 'both' direction
       const person1 = db.createNode('Person', { name: 'Alice' });
       const person2 = db.createNode('Person', { name: 'Bob' });
-      db.createEdge('KNOWS', person1.id, person2.id);
-      db.createEdge('KNOWS', person2.id, person1.id);
+      db.createEdge(person1.id, 'KNOWS', person2.id);
+      db.createEdge(person2.id, 'KNOWS', person1.id);
 
       const results = db.nodes('Person')
         .connectedTo('Person', 'KNOWS', 'both')

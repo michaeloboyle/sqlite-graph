@@ -17,11 +17,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     const d = db.createNode('Node', { name: 'D' });
     const e = db.createNode('Node', { name: 'E' });
 
-    db.createEdge('LINKS', a.id, b.id);
-    db.createEdge('LINKS', b.id, c.id);
-    db.createEdge('LINKS', a.id, d.id);
-    db.createEdge('LINKS', d.id, c.id);
-    db.createEdge('LINKS', a.id, e.id);
+    db.createEdge(a.id, 'LINKS', b.id);
+    db.createEdge(b.id, 'LINKS', c.id);
+    db.createEdge(a.id, 'LINKS', d.id);
+    db.createEdge(d.id, 'LINKS', c.id);
+    db.createEdge(a.id, 'LINKS', e.id);
 
     // Store node IDs for tests
     (db as any).testNodeIds = { a: a.id, b: b.id, c: c.id, d: d.id, e: e.id };
@@ -166,8 +166,8 @@ describe('TraversalQuery - paths() wrapper', () => {
     const y = db.createNode('Node', { name: 'Y' });
     const z = db.createNode('Node', { name: 'Z' });
 
-    db.createEdge('TYPE_A', x.id, y.id);
-    db.createEdge('TYPE_A', y.id, z.id);
+    db.createEdge(x.id, 'TYPE_A', y.id);
+    db.createEdge(y.id, 'TYPE_A', z.id);
 
     const paths = db.traverse(x.id)
       .out('TYPE_A')
@@ -179,7 +179,7 @@ describe('TraversalQuery - paths() wrapper', () => {
 
   it('should handle self-referencing paths', () => {
     const self = db.createNode('Node', { name: 'Self' });
-    db.createEdge('LINKS', self.id, self.id);
+    db.createEdge(self.id, 'LINKS', self.id);
 
     const paths = db.traverse(self.id)
       .out('LINKS')

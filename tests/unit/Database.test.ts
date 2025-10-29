@@ -246,7 +246,7 @@ describe('GraphDatabase', () => {
     it('should delete node and cascade delete edges', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      const edge = db.createEdge('POSTED_BY', job.id, company.id);
+      const edge = db.createEdge(job.id, 'POSTED_BY', company.id);
 
       // Delete the job node
       db.deleteNode(job.id);
@@ -284,7 +284,7 @@ describe('GraphDatabase', () => {
     });
 
     it('should create edge between two nodes', () => {
-      const edge = db.createEdge('POSTED_BY', jobNode.id, companyNode.id);
+      const edge = db.createEdge(jobNode.id, 'POSTED_BY', companyNode.id);
 
       expect(edge).toBeDefined();
       expect(edge.id).toBeGreaterThan(0);
@@ -295,7 +295,7 @@ describe('GraphDatabase', () => {
     });
 
     it('should create edge with properties', () => {
-      const edge = db.createEdge('REQUIRES', jobNode.id, companyNode.id, {
+      const edge = db.createEdge(jobNode.id, 'REQUIRES', companyNode.id, {
         level: 'expert',
         required: true,
         years: 5
@@ -309,13 +309,13 @@ describe('GraphDatabase', () => {
     });
 
     it('should create edge without properties', () => {
-      const edge = db.createEdge('POSTED_BY', jobNode.id, companyNode.id);
+      const edge = db.createEdge(jobNode.id, 'POSTED_BY', companyNode.id);
       expect(edge.properties).toBeUndefined();
     });
 
     it('should create multiple edges between same nodes with different types', () => {
-      const edge1 = db.createEdge('POSTED_BY', jobNode.id, companyNode.id);
-      const edge2 = db.createEdge('VERIFIED_BY', jobNode.id, companyNode.id);
+      const edge1 = db.createEdge(jobNode.id, 'POSTED_BY', companyNode.id);
+      const edge2 = db.createEdge(jobNode.id, 'VERIFIED_BY', companyNode.id);
 
       expect(edge1.id).not.toBe(edge2.id);
       expect(edge1.type).toBe('POSTED_BY');
@@ -323,25 +323,25 @@ describe('GraphDatabase', () => {
     });
 
     it('should throw error for non-existent source node', () => {
-      expect(() => db.createEdge('POSTED_BY', 99999, companyNode.id)).toThrow('Source node with ID 99999 not found');
+      expect(() => db.createEdge(99999, 'POSTED_BY', companyNode.id)).toThrow('Source node with ID 99999 not found');
     });
 
     it('should throw error for non-existent target node', () => {
-      expect(() => db.createEdge('POSTED_BY', jobNode.id, 99999)).toThrow('Target node with ID 99999 not found');
+      expect(() => db.createEdge(jobNode.id, 'POSTED_BY', 99999)).toThrow('Target node with ID 99999 not found');
     });
 
     it('should throw error for invalid edge type', () => {
-      expect(() => db.createEdge('', jobNode.id, companyNode.id)).toThrow('Edge type must be a non-empty string');
+      expect(() => db.createEdge(jobNode.id, '', companyNode.id)).toThrow('Edge type must be a non-empty string');
       // Note: Whitespace-only strings are considered valid by the current validation
     });
 
     it('should throw error for invalid node IDs', () => {
-      expect(() => db.createEdge('POSTED_BY', 0, companyNode.id)).toThrow();
-      expect(() => db.createEdge('POSTED_BY', jobNode.id, -1)).toThrow();
+      expect(() => db.createEdge(0, 'POSTED_BY', companyNode.id)).toThrow();
+      expect(() => db.createEdge(jobNode.id, 'POSTED_BY', -1)).toThrow();
     });
 
     it('should allow self-referencing edges', () => {
-      const edge = db.createEdge('SIMILAR_TO', jobNode.id, jobNode.id);
+      const edge = db.createEdge(jobNode.id, 'SIMILAR_TO', jobNode.id);
 
       expect(edge.from).toBe(jobNode.id);
       expect(edge.to).toBe(jobNode.id);
@@ -352,7 +352,7 @@ describe('GraphDatabase', () => {
     it('should retrieve existing edge by ID', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      const created = db.createEdge('POSTED_BY', job.id, company.id, { verified: true });
+      const created = db.createEdge(job.id, 'POSTED_BY', company.id, { verified: true });
 
       const retrieved = db.getEdge(created.id);
 
@@ -379,7 +379,7 @@ describe('GraphDatabase', () => {
     it('should delete existing edge', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      const edge = db.createEdge('POSTED_BY', job.id, company.id);
+      const edge = db.createEdge(job.id, 'POSTED_BY', company.id);
 
       const deleted = db.deleteEdge(edge.id);
 
@@ -395,7 +395,7 @@ describe('GraphDatabase', () => {
     it('should not delete nodes when edge is deleted', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      const edge = db.createEdge('POSTED_BY', job.id, company.id);
+      const edge = db.createEdge(job.id, 'POSTED_BY', company.id);
 
       db.deleteEdge(edge.id);
 
@@ -414,7 +414,7 @@ describe('GraphDatabase', () => {
       const result = db.transaction(() => {
         const job = db.createNode('Job', { title: 'Engineer' });
         const company = db.createNode('Company', { name: 'TechCorp' });
-        db.createEdge('POSTED_BY', job.id, company.id);
+        db.createEdge(job.id, 'POSTED_BY', company.id);
         return { job, company };
       });
 
@@ -543,7 +543,7 @@ describe('GraphDatabase', () => {
     it('should export nodes and edges', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge('POSTED_BY', job.id, company.id);
+      db.createEdge(job.id, 'POSTED_BY', company.id);
 
       const exported = db.export();
 
@@ -567,7 +567,7 @@ describe('GraphDatabase', () => {
     it('should preserve all edge properties in export', () => {
       const job = db.createNode('Job', { title: 'Engineer' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge('POSTED_BY', job.id, company.id, { verified: true, rating: 5 });
+      db.createEdge(job.id, 'POSTED_BY', company.id, { verified: true, rating: 5 });
 
       const exported = db.export();
 
@@ -699,7 +699,7 @@ describe('GraphDatabase', () => {
       // Create original data
       const job = db.createNode('Job', { title: 'Engineer', status: 'active' });
       const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge('POSTED_BY', job.id, company.id, { verified: true });
+      db.createEdge(job.id, 'POSTED_BY', company.id, { verified: true });
 
       // Export
       const exported = db.export();
@@ -852,7 +852,7 @@ describe('GraphDatabase', () => {
 
       for (let i = 0; i < count; i++) {
         const node = db.createNode('Node', { index: i });
-        db.createEdge('CONNECTS', node1.id, node.id);
+        db.createEdge(node1.id, 'CONNECTS', node.id);
       }
 
       const exported = db.export();
