@@ -41,8 +41,8 @@ const company = db.createNode('Company', {
   industry: 'SaaS'
 });
 
-// Create relationship
-db.createEdge('POSTED_BY', job.id, company.id);
+// Create relationship (natural syntax: job POSTED_BY company)
+db.createEdge(job.id, 'POSTED_BY', company.id);
 
 // Query with fluent API
 const activeJobs = db.nodes('Job')
