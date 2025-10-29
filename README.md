@@ -185,27 +185,23 @@ See [BENCHMARKS.md](docs/BENCHMARKS.md) for detailed performance analysis, metho
 
 ## Contributing
 
-Contributions are welcome! This project is in early development, so please check [PLAN.md](PLAN.md) and [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for current priorities.
+Contributions are welcome! We follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
-### Development Setup
+**Getting Started:**
+1. Read the [Contributing Guide](CONTRIBUTING.md) for complete instructions
+2. Check [PLAN.md](PLAN.md) for current roadmap and priorities
+3. Review [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for our development methodology
+4. Browse [open issues](https://github.com/oboyle/sqlite-graph/issues) for tasks needing help
 
+**Quick Setup:**
 ```bash
-# Clone repository
 git clone https://github.com/yourusername/sqlite-graph.git
 cd sqlite-graph
-
-# Install dependencies
 npm install
-
-# Run tests
 npm test
-
-# Build
-npm run build
-
-# Run benchmarks
-npm run bench
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines, testing requirements, and PR process.
 
 ## License
 
