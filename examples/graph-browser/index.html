@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sqlite-graph Browser - Neo4j Aura-style Interface</title>
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #0084ff;
+      --primary-dark: #0066cc;
+      --success: #28a745;
+      --danger: #dc3545;
+      --dark: #1e1e1e;
+      --darker: #141414;
+      --light: #f5f5f5;
+      --border: #333;
+      --text: #e0e0e0;
+      --text-muted: #999;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--darker);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary {
+      background: var(--border);
+    }
+
+    button.secondary:hover {
+      background: #444;
+    }
+
+    /* Main Layout */
+    .container {
+      display: flex;
+      height: calc(100vh - 61px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 300px;
+      background: var(--dark);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-section h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 15px;
+    }
+
+    .sample-query {
+      background: var(--darker);
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      border: 1px solid transparent;
+      transition: border 0.2s;
+    }
+
+    .sample-query:hover {
+      border-color: var(--primary);
+    }
+
+    .sample-query .title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .sample-query .query {
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      background: var(--darker);
+      padding: 12px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Query Editor */
+    .query-editor {
+      background: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: 15px;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .editor-header h3 {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .CodeMirror {
+      height: 120px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .query-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button.run {
+      background: var(--success);
+      flex: 1;
+    }
+
+    button.run:hover {
+      background: #218838;
+    }
+
+    /* Results Panel */
+    .results-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      background: var(--dark);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary);
+      background: var(--darker);
+    }
+
+    .tab-content {
+      flex: 1;
+      display: none;
+      overflow: auto;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Graph Visualization */
+    #graph-viz {
+      width: 100%;
+      height: 100%;
+      background: var(--darker);
+    }
+
+    /* Table View */
+    .table-container {
+      padding: 20px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--dark);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--darker);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    tr:hover {
+      background: var(--darker);
+    }
+
+    /* JSON View */
+    .json-view {
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    pre {
+      background: var(--dark);
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      background: var(--dark);
+      border-top: 1px solid var(--border);
+      padding: 8px 20px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .loading {
+      display: none;
+      color: var(--text-muted);
+    }
+
+    .loading.active {
+      display: flex;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .error-message {
+      background: var(--danger);
+      color: white;
+      padding: 12px 20px;
+      margin: 20px;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .error-message.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <span>🗺️</span>
+      <span>sqlite-graph Browser</span>
+    </div>
+    <div class="header-actions">
+      <button onclick="loadSampleData()">Load Sample Data</button>
+      <button class="secondary" onclick="clearDatabase()">Clear Database</button>
+      <button class="secondary" onclick="exportGraph()">Export</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <h3>Database Stats</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="nodeCount">0</div>
+            <div class="stat-label">NODES</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="edgeCount">0</div>
+            <div class="stat-label">EDGES</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Sample Queries</h3>
+
+        <div class="sample-query" onclick="loadQuery(`db.nodes('Job').where({status: 'active'}).exec()`)">
+          <div class="title">Find Active Jobs</div>
+          <div class="query">Get all active job postings</div>
+        </div>
+
+        <div class="sample-query" onclick="loadQuery(`db.traverse(1).out('POSTED_BY').exec()`)">
+          <div class="title">Find Company for Job</div>
+          <div class="query">Traverse from job to company</div>
+        </div>
+
+        <div class="sample-query" onclick="loadQuery(`db.traverse(1).shortestPath(5)`)">
+          <div class="title">Shortest Path</div>
+          <div class="query">Find shortest path between nodes</div>
+        </div>
+
+        <div class="sample-query" onclick="loadQuery(`db.nodes('Person').where({experience: {$gte: 5}}).exec()`)">
+          <div class="title">Experienced Candidates</div>
+          <div class="query">Find senior-level candidates</div>
+        </div>
+
+        <div class="sample-query" onclick="loadQuery(`db.export()`)">
+          <div class="title">Export All Data</div>
+          <div class="query">Export entire graph</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Query Editor -->
+      <div class="query-editor">
+        <div class="editor-header">
+          <h3>QUERY EDITOR</h3>
+          <span class="loading" id="loading">
+            <div class="spinner"></div>
+            <span>Executing...</span>
+          </span>
+        </div>
+        <textarea id="query-input">db.nodes('Job').exec()</textarea>
+        <div class="query-actions">
+          <button class="run" onclick="executeQuery()">▶ Run Query (Cmd+Enter)</button>
+          <button class="secondary" onclick="clearQuery()">Clear</button>
+        </div>
+        <div class="error-message" id="error-message"></div>
+      </div>
+
+      <!-- Results Panel -->
+      <div class="results-panel">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('graph')">Graph</div>
+          <div class="tab" onclick="switchTab('table')">Table</div>
+          <div class="tab" onclick="switchTab('json')">JSON</div>
+        </div>
+
+        <div id="graph-tab" class="tab-content active">
+          <div id="graph-viz"></div>
+        </div>
+
+        <div id="table-tab" class="tab-content">
+          <div class="table-container">
+            <table id="results-table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="json-tab" class="tab-content">
+          <div class="json-view">
+            <pre id="json-output">[]</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="status-dot"></div>
+          <span>Connected</span>
+        </div>
+        <div class="status-item">
+          <span id="query-time">Query time: 0ms</span>
+        </div>
+        <div class="status-item">
+          <span id="result-count">Results: 0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize CodeMirror
+    const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
+      mode: 'text/javascript',
+      theme: 'dracula',
+      lineNumbers: true,
+      lineWrapping: true,
+    });
+
+    // Keyboard shortcuts
+    editor.setOption('extraKeys', {
+      'Cmd-Enter': executeQuery,
+      'Ctrl-Enter': executeQuery,
+    });
+
+    // Vis.js network
+    let network;
+    let graphData = { nodes: [], edges: [] };
+
+    function initNetwork() {
+      const container = document.getElementById('graph-viz');
+      const data = {
+        nodes: new vis.DataSet([]),
+        edges: new vis.DataSet([])
+      };
+
+      const options = {
+        nodes: {
+          shape: 'dot',
+          size: 25,
+          font: { size: 14, color: '#fff' },
+          borderWidth: 2,
+          shadow: true
+        },
+        edges: {
+          width: 2,
+          color: { color: '#666', highlight: '#0084ff' },
+          smooth: { type: 'continuous' },
+          arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+          font: { size: 12, color: '#999', align: 'middle' }
+        },
+        physics: {
+          stabilization: { iterations: 200 },
+          barnesHut: {
+            gravitationalConstant: -8000,
+            springConstant: 0.04,
+            springLength: 150
+          }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 200,
+          navigationButtons: true,
+          keyboard: true
+        }
+      };
+
+      network = new vis.Network(container, data, options);
+      network.on('stabilizationIterationsDone', () => {
+        network.setOptions({ physics: false });
+      });
+    }
+
+    function loadQuery(query) {
+      editor.setValue(query);
+      editor.focus();
+    }
+
+    function clearQuery() {
+      editor.setValue('');
+      editor.focus();
+    }
+
+    async function executeQuery() {
+      const query = editor.getValue().trim();
+      if (!query) return;
+
+      // Show loading
+      document.getElementById('loading').classList.add('active');
+      document.getElementById('error-message').classList.remove('active');
+
+      const startTime = performance.now();
+
+      try {
+        // In production, this would call the backend API
+        // For now, we'll simulate with mock data
+        const result = await simulateQuery(query);
+
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+
+        // Update stats
+        document.getElementById('query-time').textContent = `Query time: ${duration}ms`;
+        document.getElementById('result-count').textContent = `Results: ${Array.isArray(result) ? result.length : 1}`;
+
+        // Update all views
+        updateGraph(result);
+        updateTable(result);
+        updateJSON(result);
+
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        document.getElementById('loading').classList.remove('active');
+      }
+    }
+
+    function simulateQuery(query) {
+      // Mock query execution (in production, this would be an API call)
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(generateMockData());
+        }, 200);
+      });
+    }
+
+    function generateMockData() {
+      return [
+        { id: 1, type: 'Job', properties: { title: 'Senior Engineer', salary: 180000 } },
+        { id: 2, type: 'Job', properties: { title: 'Tech Lead', salary: 200000 } },
+        { id: 3, type: 'Company', properties: { name: 'Google', industry: 'Tech' } }
+      ];
+    }
+
+    function updateGraph(data) {
+      // Implementation would convert data to vis.js format
+      console.log('Update graph:', data);
+    }
+
+    function updateTable(data) {
+      const table = document.getElementById('results-table');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+
+      tbody.innerHTML = '';
+      thead.innerHTML = '';
+
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      // Create headers
+      const headers = Object.keys(data[0]);
+      const headerRow = document.createElement('tr');
+      headers.forEach(key => {
+        const th = document.createElement('th');
+        th.textContent = key;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      // Create rows
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        headers.forEach(key => {
+          const td = document.createElement('td');
+          td.textContent = typeof item[key] === 'object' ? JSON.stringify(item[key]) : item[key];
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateJSON(data) {
+      document.getElementById('json-output').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      // Show selected tab
+      document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+    }
+
+    function showError(message) {
+      const errorEl = document.getElementById('error-message');
+      errorEl.textContent = message;
+      errorEl.classList.add('active');
+    }
+
+    function loadSampleData() {
+      showError('Sample data loading - connect to backend API');
+    }
+
+    function clearDatabase() {
+      if (confirm('Clear all data from the database?')) {
+        showError('Database clear - connect to backend API');
+      }
+    }
+
+    function exportGraph() {
+      showError('Export feature - connect to backend API');
+    }
+
+    // Initialize
+    initNetwork();
+
+    // Mock stats
+    document.getElementById('nodeCount').textContent = '15';
+    document.getElementById('edgeCount').textContent = '23';
+  </script>
+</body>
+</html>

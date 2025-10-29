@@ -1,2 +1,7 @@
-*.html
-*.json
+# Ignore generated visualization files
+job-search-*.html
+job-search-*.json
+visualization-export.ts.backup
+
+# But keep graph-browser files
+!graph-browser/
