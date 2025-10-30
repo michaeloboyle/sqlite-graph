@@ -6,6 +6,38 @@
   <title>sqlite-graph Interactive Visualization</title>
   <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
   <style>
+    /* Light theme (default) */
+    :root {
+      --bg-primary: #f5f5f5;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f8f9fa;
+      --text-primary: #333;
+      --text-secondary: #666;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --button-primary: #007bff;
+      --button-primary-hover: #0056b3;
+      --button-secondary: #6c757d;
+      --button-secondary-hover: #545b62;
+      --accent-color: #007bff;
+    }
+
+    /* Dark theme (when system prefers dark) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1e;
+        --bg-secondary: #2a2a2a;
+        --bg-tertiary: #333333;
+        --text-primary: #e0e0e0;
+        --text-secondary: #999999;
+        --shadow: rgba(0, 0, 0, 0.3);
+        --button-primary: #0d6efd;
+        --button-primary-hover: #0b5ed7;
+        --button-secondary: #6c757d;
+        --button-secondary-hover: #5a6268;
+        --accent-color: #0d6efd;
+      }
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -14,7 +46,9 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     .container {
@@ -24,29 +58,29 @@
     }
 
     header {
-      background: white;
+      background: var(--bg-secondary);
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px var(--shadow);
     }
 
     h1 {
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 10px;
     }
 
     .description {
-      color: #666;
+      color: var(--text-secondary);
       line-height: 1.6;
     }
 
     .controls {
-      background: white;
+      background: var(--bg-secondary);
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px var(--shadow);
     }
 
     .button-group {
@@ -57,7 +91,7 @@
 
     button {
       padding: 10px 20px;
-      background: #007bff;
+      background: var(--button-primary);
       color: white;
       border: none;
       border-radius: 4px;
@@ -67,40 +101,40 @@
     }
 
     button:hover {
-      background: #0056b3;
+      background: var(--button-primary-hover);
     }
 
     button.secondary {
-      background: #6c757d;
+      background: var(--button-secondary);
     }
 
     button.secondary:hover {
-      background: #545b62;
+      background: var(--button-secondary-hover);
     }
 
     #mynetwork {
       width: 100%;
       height: 700px;
-      background: white;
+      background: var(--bg-secondary);
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px var(--shadow);
     }
 
     .info-panel {
-      background: white;
+      background: var(--bg-secondary);
       padding: 20px;
       border-radius: 8px;
       margin-top: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px var(--shadow);
     }
 
     .info-panel h3 {
       margin-bottom: 10px;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .node-details {
-      background: #f8f9fa;
+      background: var(--bg-tertiary);
       padding: 15px;
       border-radius: 4px;
       margin-top: 10px;
@@ -109,9 +143,10 @@
     .node-details pre {
       margin: 10px 0 0 0;
       padding: 10px;
-      background: white;
+      background: var(--bg-secondary);
       border-radius: 4px;
       overflow-x: auto;
+      color: var(--text-primary);
     }
 
     .stats {
@@ -122,7 +157,7 @@
     }
 
     .stat-card {
-      background: #f8f9fa;
+      background: var(--bg-tertiary);
       padding: 15px;
       border-radius: 4px;
       text-align: center;
@@ -131,11 +166,11 @@
     .stat-value {
       font-size: 32px;
       font-weight: bold;
-      color: #007bff;
+      color: var(--accent-color);
     }
 
     .stat-label {
-      color: #666;
+      color: var(--text-secondary);
       margin-top: 5px;
     }
   </style>
@@ -192,20 +227,26 @@
     let network;
     let nodes, edges;
 
+    // Detect system theme preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
     const options = {
       nodes: {
         shape: 'dot',
         size: 20,
         font: {
           size: 14,
-          color: '#333'
+          color: prefersDark ? '#e0e0e0' : '#333'
         },
         borderWidth: 2,
         shadow: true
       },
       edges: {
         width: 2,
-        color: { color: '#848484', highlight: '#007bff' },
+        color: {
+          color: prefersDark ? '#666' : '#848484',
+          highlight: prefersDark ? '#0d6efd' : '#007bff'
+        },
         smooth: {
           type: 'continuous'
         },
@@ -214,7 +255,8 @@
         },
         font: {
           size: 12,
-          align: 'middle'
+          align: 'middle',
+          color: prefersDark ? '#999' : '#666'
         }
       },
       physics: {
@@ -232,6 +274,25 @@
         keyboard: true
       }
     };
+
+    // Listen for system theme changes and update graph colors
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      const isDark = e.matches;
+      network.setOptions({
+        nodes: {
+          font: { color: isDark ? '#e0e0e0' : '#333' }
+        },
+        edges: {
+          color: {
+            color: isDark ? '#666' : '#848484',
+            highlight: isDark ? '#0d6efd' : '#007bff'
+          },
+          font: {
+            color: isDark ? '#999' : '#666'
+          }
+        }
+      });
+    });
 
     // Color schemes for different node types
     const nodeColors = {
