@@ -62,6 +62,12 @@ const similarJobs = db.traverse(job.id)
 // Shortest path
 const path = db.traverse(job.id)
   .shortestPath(anotherJob.id);
+
+// Merge operations (upsert)
+const { node, created } = db.mergeNode('Company',
+  { name: 'TechCorp' },  // Match criteria
+  { industry: 'SaaS', size: 'Large' }  // Properties to set
+);
 ```
 
 ## Installation
@@ -148,11 +154,14 @@ See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology d
 - [x] Path enumeration (paths() wrapper)
 - [x] Integration tests (13 integration tests)
 
-### Phase 3: Advanced Features
+### Phase 3: Advanced Features (In Progress)
+- [x] Merge operations (mergeNode, mergeEdge)
+- [x] Index management (createIndex, dropIndex, listIndexes)
+- [ ] Merge operation tests
 - [ ] All paths finding
 - [ ] Pattern matching
 - [ ] Bulk operations
-- [ ] Export/import
+- [x] Export/import (implemented in Phase 1)
 
 ### Phase 4: Documentation
 - [ ] API documentation

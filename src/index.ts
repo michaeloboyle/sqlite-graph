@@ -40,6 +40,17 @@ export type {
   GraphExport
 } from './types';
 
+// Merge operation types
+export type {
+  MergeOptions,
+  EdgeMergeOptions,
+  MergeResult,
+  EdgeMergeResult,
+  MergeConflictError,
+  MergePerformanceWarning,
+  IndexInfo
+} from './types/merge';
+
 // Utility functions (for advanced usage)
 export { serialize, deserialize, timestampToDate, dateToTimestamp } from './utils/serialization';
 export {
