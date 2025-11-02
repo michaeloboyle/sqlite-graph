@@ -73,40 +73,38 @@ const job3 = db.mergeNode(
       discoveredAt: new Date().toISOString(),
       applicationStatus: 'not_applied',
       viewCount: 0
-    },
+    } as any,
     onMatch: {
       lastSeenAt: new Date().toISOString()
       // viewCount would be incremented here in real app
-    }
+    } as any
   }
 );
 
 console.log('First merge (CREATE):');
 console.log(`  Created: ${job3.created}`);
-console.log(`  discoveredAt: ${job3.node.properties.discoveredAt}`);
-console.log(`  applicationStatus: ${job3.node.properties.applicationStatus}`);
-console.log(`  lastSeenAt: ${job3.node.properties.lastSeenAt || 'undefined'}\n`);
+console.log(`  discoveredAt: ${(job3.node.properties as any).discoveredAt}`);
+console.log(`  applicationStatus: ${(job3.node.properties as any).applicationStatus}`);
+console.log(`  lastSeenAt: ${(job3.node.properties as any).lastSeenAt || 'undefined'}\n`);
 
-// Wait a bit then merge again
-setTimeout(() => {
-  const job4 = db.mergeNode(
-    'Job',
-    { url: 'https://example.com/job/456' },
-    undefined,
-    {
-      onMatch: {
-        lastSeenAt: new Date().toISOString(),
-        viewCount: (job3.node.properties.viewCount || 0) + 1
-      }
+// Immediately merge again to demonstrate MATCH behavior
+const job4 = db.mergeNode(
+  'Job',
+  { url: 'https://example.com/job/456' },
+  undefined,
+  {
+    onMatch: {
+      lastSeenAt: new Date().toISOString(),
+      viewCount: ((job3.node.properties as any).viewCount || 0) + 1
     }
-  );
+  } as any
+);
 
-  console.log('Second merge (MATCH):');
-  console.log(`  Created: ${job4.created}`);
-  console.log(`  discoveredAt: ${job4.node.properties.discoveredAt} (preserved)`);
-  console.log(`  lastSeenAt: ${job4.node.properties.lastSeenAt} (updated)`);
-  console.log(`  viewCount: ${job4.node.properties.viewCount} (incremented)\n`);
-}, 100);
+console.log('Second merge (MATCH):');
+console.log(`  Created: ${job4.created}`);
+console.log(`  discoveredAt: ${(job4.node.properties as any).discoveredAt} (preserved)`);
+console.log(`  lastSeenAt: ${(job4.node.properties as any).lastSeenAt} (updated)`);
+console.log(`  viewCount: ${(job4.node.properties as any).viewCount} (incremented)\n`);
 
 // ============================================================================
 // Example 3: Company Deduplication
@@ -150,12 +148,12 @@ const edge1 = db.mergeEdge(
   {
     onCreate: { firstSeenAt: new Date().toISOString() },
     onMatch: { lastVerifiedAt: new Date().toISOString() }
-  }
+  } as any
 );
 
 console.log(`First edge merge: Created=${edge1.created}`);
-console.log(`  firstSeenAt: ${edge1.edge.properties?.firstSeenAt}`);
-console.log(`  lastVerifiedAt: ${edge1.edge.properties?.lastVerifiedAt || 'undefined'}`);
+console.log(`  firstSeenAt: ${(edge1.edge.properties as any)?.firstSeenAt}`);
+console.log(`  lastVerifiedAt: ${(edge1.edge.properties as any)?.lastVerifiedAt || 'undefined'}`);
 
 // Second merge: Finds existing relationship
 const edge2 = db.mergeEdge(
@@ -165,12 +163,12 @@ const edge2 = db.mergeEdge(
   undefined,
   {
     onMatch: { lastVerifiedAt: new Date().toISOString() }
-  }
+  } as any
 );
 
 console.log(`\nSecond edge merge: Created=${edge2.created}`);
-console.log(`  firstSeenAt: ${edge2.edge.properties?.firstSeenAt} (preserved)`);
-console.log(`  lastVerifiedAt: ${edge2.edge.properties?.lastVerifiedAt} (updated)\n`);
+console.log(`  firstSeenAt: ${(edge2.edge.properties as any)?.firstSeenAt} (preserved)`);
+console.log(`  lastVerifiedAt: ${(edge2.edge.properties as any)?.lastVerifiedAt} (updated)\n`);
 
 // ============================================================================
 // Example 5: Bulk Import with Merge (Idempotent ETL)
@@ -191,43 +189,42 @@ const scrapedJobs = [
 let created = 0;
 let matched = 0;
 
-db.transaction(() => {
-  for (const jobData of scrapedJobs) {
-    // Merge company
-    const company = db.mergeNode(
-      'Company',
-      { name: jobData.company },
-      { name: jobData.company }
-    );
+// Note: Each merge operation has its own transaction, so we don't need to wrap
+for (const jobData of scrapedJobs) {
+  // Merge company
+  const company = db.mergeNode(
+    'Company',
+    { name: jobData.company },
+    { name: jobData.company }
+  );
 
-    // Merge job with tracking
-    const job = db.mergeNode(
-      'Job',
-      { url: jobData.url },
-      {
-        url: jobData.url,
-        title: jobData.title,
-        status: 'active'
+  // Merge job with tracking
+  const job = db.mergeNode(
+    'Job',
+    { url: jobData.url },
+    {
+      url: jobData.url,
+      title: jobData.title,
+      status: 'active'
+    },
+    {
+      onCreate: {
+        discoveredAt: new Date().toISOString(),
+        applicationStatus: 'not_applied'
       },
-      {
-        onCreate: {
-          discoveredAt: new Date().toISOString(),
-          applicationStatus: 'not_applied'
-        },
-        onMatch: {
-          lastSeenAt: new Date().toISOString(),
-          status: 'active' // Reactivate if was closed
-        }
+      onMatch: {
+        lastSeenAt: new Date().toISOString(),
+        status: 'active' // Reactivate if was closed
       }
-    );
+    } as any
+  );
 
-    // Merge relationship
-    db.mergeEdge(job.node.id, 'POSTED_BY', company.node.id);
+  // Merge relationship
+  db.mergeEdge(job.node.id, 'POSTED_BY', company.node.id);
 
-    if (job.created) created++;
-    else matched++;
-  }
-});
+  if (job.created) created++;
+  else matched++;
+}
 
 console.log(`Processed ${scrapedJobs.length} scraped jobs:`);
 console.log(`  ${created} new jobs created`);
@@ -281,22 +278,20 @@ console.log('======================================\n');
 
 const iterations = 1000;
 
-// Manual pattern
+// Manual pattern (with transaction per operation for fair comparison)
 const manualStart = Date.now();
 for (let i = 0; i < iterations; i++) {
-  db.transaction(() => {
-    const existing = db
-      .nodes('TestNode')
-      .where({ key: `test-${i % 100}` })
-      .limit(1)
-      .exec()[0];
+  const existing = db
+    .nodes('TestNode')
+    .where({ key: `test-${i % 100}` })
+    .limit(1)
+    .exec()[0];
 
-    if (existing) {
-      db.updateNode(existing.id, { updated: true });
-    } else {
-      db.createNode('TestNode', { key: `test-${i % 100}`, created: true });
-    }
-  });
+  if (existing) {
+    db.updateNode(existing.id, { updated: true } as any);
+  } else {
+    db.createNode('TestNode', { key: `test-${i % 100}`, created: true } as any);
+  }
 }
 const manualTime = Date.now() - manualStart;
 
@@ -312,8 +307,8 @@ for (let i = 0; i < iterations; i++) {
   db.mergeNode(
     'TestNode',
     { key: `test-${i % 100}` },
-    { key: `test-${i % 100}`, created: true },
-    { onMatch: { updated: true }, warnOnMissingIndex: false }
+    { key: `test-${i % 100}`, created: true } as any,
+    { onMatch: { updated: true }, warnOnMissingIndex: false } as any
   );
 }
 const mergeTime = Date.now() - mergeStart;
