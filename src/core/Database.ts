@@ -11,6 +11,15 @@ import {
   DatabaseOptions,
   GraphExport
 } from '../types';
+import {
+  MergeOptions,
+  EdgeMergeOptions,
+  MergeResult,
+  EdgeMergeResult,
+  MergeConflictError,
+  MergePerformanceWarning,
+  IndexInfo
+} from '../types/merge';
 import { serialize, deserialize, timestampToDate } from '../utils/serialization';
 import {
   validateNodeType,
@@ -579,5 +588,390 @@ export class GraphDatabase {
    */
   getRawDb(): Database.Database {
     return this.db;
+  }
+
+  /**
+   * Merge a node - create if not exists, update if exists.
+   * Provides Cypher MERGE-like semantics with ON CREATE / ON MATCH support.
+   *
+   * @template T - Type of the node properties
+   * @param type - Node type
+   * @param matchProperties - Properties to match on (lookup criteria)
+   * @param baseProperties - Properties for creation (merged with matchProperties)
+   * @param options - Merge options with onCreate/onMatch semantics
+   * @returns Result containing the node and whether it was created
+   *
+   * @throws {MergeConflictError} If multiple nodes match criteria
+   * @throws {Error} If validation fails
+   *
+   * @example
+   * ```typescript
+   * // Simple upsert
+   * const { node, created } = db.mergeNode('Company',
+   *   { name: 'TechCorp' },
+   *   { name: 'TechCorp', industry: 'Software' }
+   * );
+   *
+   * // With ON CREATE / ON MATCH
+   * const { node, created } = db.mergeNode('Job',
+   *   { url: 'https://example.com/job/123' },
+   *   { title: 'Engineer', status: 'active' },
+   *   {
+   *     onCreate: { discovered: new Date(), applicationStatus: 'not_applied' },
+   *     onMatch: { lastSeen: new Date() }
+   *   }
+   * );
+   * ```
+   */
+  mergeNode<T extends NodeData = NodeData>(
+    type: string,
+    matchProperties: Partial<T>,
+    baseProperties?: T,
+    options?: MergeOptions<T>
+  ): MergeResult<T> {
+    validateNodeType(type, this.schema);
+
+    // Build WHERE clause for all match properties
+    const matchKeys = Object.keys(matchProperties);
+    if (matchKeys.length === 0) {
+      throw new Error('Match properties cannot be empty for merge operation');
+    }
+
+    // Check for index on first match property (performance warning)
+    if (options?.warnOnMissingIndex !== false && process.env.NODE_ENV !== 'production') {
+      const firstMatchKey = matchKeys[0];
+      const hasIndex = this.hasPropertyIndex(type, firstMatchKey);
+      if (!hasIndex) {
+        console.warn(new MergePerformanceWarning(type, firstMatchKey).message);
+      }
+    }
+
+    return this.transaction(() => {
+      // Build SQL to find matching node
+      const whereConditions = matchKeys.map(
+        (key) => `json_extract(properties, '$.${key}') = ?`
+      );
+      const sql = `
+        SELECT * FROM nodes
+        WHERE type = ? AND ${whereConditions.join(' AND ')}
+      `;
+      const matchValues = matchKeys.map((key) => (matchProperties as any)[key]);
+
+      const stmt = this.db.prepare(sql);
+      const rows = stmt.all(type, ...matchValues) as any[];
+
+      if (rows.length > 1) {
+        const nodes = rows.map((row) => ({
+          id: row.id,
+          type: row.type,
+          properties: deserialize<T>(row.properties),
+          createdAt: timestampToDate(row.created_at),
+          updatedAt: timestampToDate(row.updated_at)
+        }));
+        throw new MergeConflictError(type, matchProperties as NodeData, nodes);
+      }
+
+      if (rows.length === 1) {
+        // MATCH: Update with onMatch properties
+        const existing = rows[0];
+        const existingProps = deserialize<T>(existing.properties);
+        const updateProps = options?.onMatch || {};
+        const mergedProps = { ...existingProps, ...updateProps };
+
+        validateNodeProperties(type, mergedProps as T, this.schema);
+
+        const updateStmt = this.preparedStatements.get('updateNode')!;
+        const updatedRow = updateStmt.get(serialize(mergedProps), existing.id) as any;
+
+        return {
+          node: {
+            id: updatedRow.id,
+            type: updatedRow.type,
+            properties: deserialize<T>(updatedRow.properties),
+            createdAt: timestampToDate(updatedRow.created_at),
+            updatedAt: timestampToDate(updatedRow.updated_at)
+          },
+          created: false
+        };
+      } else {
+        // CREATE: Insert with onCreate properties
+        const createProps = {
+          ...matchProperties,
+          ...baseProperties,
+          ...options?.onCreate
+        } as T;
+
+        validateNodeProperties(type, createProps, this.schema);
+
+        const insertStmt = this.preparedStatements.get('insertNode')!;
+        const newRow = insertStmt.get(type, serialize(createProps)) as any;
+
+        return {
+          node: {
+            id: newRow.id,
+            type: newRow.type,
+            properties: deserialize<T>(newRow.properties),
+            createdAt: timestampToDate(newRow.created_at),
+            updatedAt: timestampToDate(newRow.updated_at)
+          },
+          created: true
+        };
+      }
+    });
+  }
+
+  /**
+   * Merge an edge - create if not exists, update if exists.
+   * Ensures only one edge exists between two nodes with the given type.
+   *
+   * @template T - Type of the edge properties
+   * @param from - Source node ID
+   * @param type - Edge type
+   * @param to - Target node ID
+   * @param properties - Base edge properties
+   * @param options - Edge merge options with onCreate/onMatch
+   * @returns Result containing the edge and whether it was created
+   *
+   * @throws {Error} If nodes don't exist
+   *
+   * @example
+   * ```typescript
+   * // Simple edge merge
+   * const { edge, created } = db.mergeEdge(jobId, 'POSTED_BY', companyId);
+   *
+   * // With timestamps
+   * const { edge, created } = db.mergeEdge(
+   *   jobId, 'POSTED_BY', companyId,
+   *   { source: 'scraper' },
+   *   {
+   *     onCreate: { firstSeen: Date.now() },
+   *     onMatch: { lastVerified: Date.now() }
+   *   }
+   * );
+   * ```
+   */
+  mergeEdge<T extends NodeData = NodeData>(
+    from: number,
+    type: string,
+    to: number,
+    properties?: T,
+    options?: EdgeMergeOptions<T>
+  ): EdgeMergeResult<T> {
+    validateEdgeType(type, this.schema);
+    validateNodeId(from);
+    validateNodeId(to);
+
+    // Verify nodes exist
+    const fromNode = this.getNode(from);
+    const toNode = this.getNode(to);
+
+    if (!fromNode) {
+      throw new Error(`Source node with ID ${from} not found`);
+    }
+    if (!toNode) {
+      throw new Error(`Target node with ID ${to} not found`);
+    }
+
+    return this.transaction(() => {
+      // Find existing edges
+      const stmt = this.db.prepare(`
+        SELECT * FROM edges
+        WHERE from_id = ? AND type = ? AND to_id = ?
+      `);
+      const rows = stmt.all(from, type, to) as any[];
+
+      // Check for conflicts
+      if (rows.length > 1) {
+        const edges = rows.map((row) => ({
+          id: row.id,
+          type: row.type,
+          from: row.from_id,
+          to: row.to_id,
+          properties: row.properties ? deserialize<T>(row.properties) : undefined,
+          createdAt: timestampToDate(row.created_at)
+        }));
+        throw new MergeConflictError(
+          `Edge ${type}`,
+          { from, to } as any,
+          edges as any
+        );
+      }
+
+      const existing = rows[0];
+
+      if (existing) {
+        // MATCH: Merge baseProperties and onMatch properties
+        const shouldUpdate = (properties && Object.keys(properties).length > 0) ||
+                            (options?.onMatch && Object.keys(options.onMatch).length > 0);
+
+        if (shouldUpdate) {
+          const existingProps = existing.properties ? deserialize<T>(existing.properties) : {};
+          const mergedProps = {
+            ...existingProps,
+            ...(properties || {}),
+            ...options?.onMatch
+          };
+
+          const updateStmt = this.db.prepare(
+            'UPDATE edges SET properties = ? WHERE id = ? RETURNING *'
+          );
+          const updatedRow = updateStmt.get(serialize(mergedProps), existing.id) as any;
+
+          return {
+            edge: {
+              id: updatedRow.id,
+              type: updatedRow.type,
+              from: updatedRow.from_id,
+              to: updatedRow.to_id,
+              properties: deserialize<T>(updatedRow.properties),
+              createdAt: timestampToDate(updatedRow.created_at)
+            },
+            created: false
+          };
+        }
+
+        // Return existing unchanged
+        return {
+          edge: {
+            id: existing.id,
+            type: existing.type,
+            from: existing.from_id,
+            to: existing.to_id,
+            properties: existing.properties ? deserialize<T>(existing.properties) : undefined,
+            createdAt: timestampToDate(existing.created_at)
+          },
+          created: false
+        };
+      } else {
+        // CREATE: Insert with onCreate properties
+        const createProps = {
+          ...properties,
+          ...options?.onCreate
+        } as T;
+
+        const insertStmt = this.preparedStatements.get('insertEdge')!;
+        const newRow = insertStmt.get(
+          type,
+          from,
+          to,
+          Object.keys(createProps).length > 0 ? serialize(createProps) : null
+        ) as any;
+
+        return {
+          edge: {
+            id: newRow.id,
+            type: newRow.type,
+            from: newRow.from_id,
+            to: newRow.to_id,
+            properties: newRow.properties ? deserialize<T>(newRow.properties) : undefined,
+            createdAt: timestampToDate(newRow.created_at)
+          },
+          created: true
+        };
+      }
+    });
+  }
+
+  /**
+   * Create a property index for efficient merge operations.
+   * Required for good performance when using mergeNode() on large datasets.
+   *
+   * @param nodeType - Node type to index
+   * @param property - Property name to index
+   * @param unique - Whether to enforce uniqueness (default: false)
+   *
+   * @example
+   * ```typescript
+   * // Create index for URL lookups
+   * db.createPropertyIndex('Job', 'url');
+   *
+   * // Create unique index to prevent duplicates
+   * db.createPropertyIndex('Job', 'url', true);
+   *
+   * // Now mergeNode is efficient
+   * db.mergeNode('Job', { url: 'https://...' }, ...);
+   * ```
+   */
+  createPropertyIndex(nodeType: string, property: string, unique = false): void {
+    const indexName = `idx_merge_${nodeType}_${property}`;
+    const uniqueClause = unique ? 'UNIQUE' : '';
+
+    // Note: SQLite doesn't allow parameters in partial index WHERE clauses
+    // Must use string concatenation (safe here as nodeType is validated)
+    const sql = `
+      CREATE ${uniqueClause} INDEX IF NOT EXISTS ${indexName}
+      ON nodes(type, json_extract(properties, '$.${property}'))
+      WHERE type = '${nodeType}'
+    `;
+
+    this.db.prepare(sql).run();
+  }
+
+  /**
+   * Check if a property index exists for merge operations.
+   *
+   * @param nodeType - Node type
+   * @param property - Property name
+   * @returns True if index exists
+   * @private
+   */
+  private hasPropertyIndex(nodeType: string, property: string): boolean {
+    const indexName = `idx_merge_${nodeType}_${property}`;
+    const stmt = this.db.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type = 'index' AND name = ?
+    `);
+    const result = stmt.get(indexName);
+    return result !== undefined;
+  }
+
+  /**
+   * List all custom indexes in the database.
+   *
+   * @returns Array of index information
+   *
+   * @example
+   * ```typescript
+   * const indexes = db.listIndexes();
+   * indexes.forEach(idx => {
+   *   console.log(`${idx.name}: ${idx.unique ? 'UNIQUE' : ''} ${idx.columns.join(', ')}`);
+   * });
+   * ```
+   */
+  listIndexes(): IndexInfo[] {
+    const stmt = this.db.prepare(`
+      SELECT name, tbl_name as 'table', sql
+      FROM sqlite_master
+      WHERE type = 'index' AND name LIKE 'idx_merge_%'
+      ORDER BY name
+    `);
+    const rows = stmt.all() as any[];
+
+    return rows.map((row) => {
+      const isUnique = row.sql && row.sql.includes('UNIQUE');
+      const whereMatch = row.sql ? row.sql.match(/WHERE\s+(.+)$/i) : null;
+
+      return {
+        name: row.name,
+        table: row.table as 'nodes' | 'edges',
+        columns: [row.name.replace('idx_merge_', '')],
+        unique: isUnique,
+        partial: whereMatch ? whereMatch[1] : undefined
+      };
+    });
+  }
+
+  /**
+   * Drop a custom index.
+   *
+   * @param indexName - Name of the index to drop
+   *
+   * @example
+   * ```typescript
+   * db.dropIndex('idx_merge_Job_url');
+   * ```
+   */
+  dropIndex(indexName: string): void {
+    this.db.prepare(`DROP INDEX IF EXISTS ${indexName}`).run();
   }
 }

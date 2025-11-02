@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-11-02T04:30:58.156Z",
+  "platform": "darwin",
+  "nodeVersion": "v23.11.0",
+  "results": [
+    {
+      "name": "mergeNode - CREATE new nodes",
+      "description": "Creating new nodes via merge (no match found)",
+      "iterations": 1000,
+      "totalTimeMs": 152.3280420000001,
+      "avgTimeMs": 0.1523280420000001,
+      "opsPerSec": 6564.779451442035,
+      "minTimeMs": 0.04637500000001182,
+      "maxTimeMs": 3.9413749999999936
+    },
+    {
+      "name": "mergeNode - MATCH existing (no index)",
+      "description": "Matching existing nodes without property index (full table scan)",
+      "iterations": 1000,
+      "totalTimeMs": 54.38829199999998,
+      "avgTimeMs": 0.05438829199999998,
+      "opsPerSec": 18386.3100536417,
+      "minTimeMs": 0.04762500000003911,
+      "maxTimeMs": 0.18295799999998508
+    },
+    {
+      "name": "mergeNode - MATCH existing (with index)",
+      "description": "Matching existing nodes with property index (indexed lookup)",
+      "iterations": 1000,
+      "totalTimeMs": 33.36195800000007,
+      "avgTimeMs": 0.03336195800000007,
+      "opsPerSec": 29974.25990404993,
+      "minTimeMs": 0.029834000000050764,
+      "maxTimeMs": 0.15525000000002365
+    },
+    {
+      "name": "mergeNode - CREATE with onCreate",
+      "description": "Creating nodes with onCreate properties",
+      "iterations": 1000,
+      "totalTimeMs": 192.90379200000007,
+      "avgTimeMs": 0.19290379200000007,
+      "opsPerSec": 5183.931272849212,
+      "minTimeMs": 0.05070899999998346,
+      "maxTimeMs": 2.1467499999999973
+    },
+    {
+      "name": "mergeNode - MATCH with onMatch",
+      "description": "Updating existing node with onMatch properties",
+      "iterations": 1000,
+      "totalTimeMs": 32.80712500000004,
+      "avgTimeMs": 0.03280712500000004,
+      "opsPerSec": 30481.183584358543,
+      "minTimeMs": 0.02870800000005147,
+      "maxTimeMs": 0.1462909999997919
+    },
+    {
+      "name": "mergeEdge - CREATE new edges",
+      "description": "Creating new edges via merge",
+      "iterations": 1000,
+      "totalTimeMs": 27.408666999999923,
+      "avgTimeMs": 0.02740866699999992,
+      "opsPerSec": 36484.809713657465,
+      "minTimeMs": 0.02295800000001691,
+      "maxTimeMs": 0.10154199999988123
+    },
+    {
+      "name": "mergeEdge - MATCH existing",
+      "description": "Matching and updating existing edges",
+      "iterations": 1000,
+      "totalTimeMs": 26.783249999999953,
+      "avgTimeMs": 0.026783249999999953,
+      "opsPerSec": 37336.768316018475,
+      "minTimeMs": 0.0232499999999618,
+      "maxTimeMs": 0.10429100000010294
+    },
+    {
+      "name": "createPropertyIndex",
+      "description": "Creating property index on existing data (1000 nodes)",
+      "iterations": 10,
+      "totalTimeMs": 3.361499999999978,
+      "avgTimeMs": 0.33614999999999784,
+      "opsPerSec": 2974.862412613436,
+      "minTimeMs": 0.31150000000002365,
+      "maxTimeMs": 0.3663329999999405
+    },
+    {
+      "name": "mergeNode - Large dataset (no index)",
+      "description": "Merge on 1000-node dataset without index",
+      "iterations": 100,
+      "totalTimeMs": 23.83487500000001,
+      "avgTimeMs": 0.2383487500000001,
+      "opsPerSec": 4195.5328064443365,
+      "minTimeMs": 0.21554100000003018,
+      "maxTimeMs": 0.43812499999989996
+    },
+    {
+      "name": "mergeNode - Large dataset (with index)",
+      "description": "Merge on 1000-node dataset with index",
+      "iterations": 100,
+      "totalTimeMs": 3.350708000000168,
+      "avgTimeMs": 0.03350708000000168,
+      "opsPerSec": 29844.43884695264,
+      "minTimeMs": 0.02825000000007094,
+      "maxTimeMs": 0.1383330000001024
+    }
+  ]
+}
