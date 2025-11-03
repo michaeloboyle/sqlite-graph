@@ -132,6 +132,9 @@ See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology d
 - [Development Plan](PLAN.md) - Comprehensive project roadmap
 - [SPARC Methodology](docs/SPARC-DEVELOPMENT.md) - Development approach
 - [Performance Benchmarks](docs/BENCHMARKS.md) - Detailed performance analysis and methodology
+- [Concurrency Best Practices](docs/CONCURRENCY-BEST-PRACTICES.md) - Production concurrency patterns and WAL mode
+- [Limitations](docs/LIMITATIONS.md) - Known limitations and workarounds
+- [Competitive Analysis](docs/COMPETITIVE-ANALYSIS.md) - Comparison with Neo4j, ArangoDB, and alternatives
 - [API Reference](docs/API.md) - Full API documentation (1,398 lines)
 - [Examples](examples/) - Usage examples including 750-line job pipeline
 
