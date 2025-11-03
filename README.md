@@ -68,6 +68,16 @@ const { node, created } = db.mergeNode('Company',
   { name: 'TechCorp' },  // Match criteria
   { industry: 'SaaS', size: 'Large' }  // Properties to set
 );
+
+// Production concurrency (optional)
+import { enableWAL, withRetry, WriteQueue } from 'sqlite-graph';
+
+enableWAL(db); // Better read concurrency
+
+await withRetry(() => db.createNode('Job', { title: 'Engineer' })); // Auto-retry on locks
+
+const writeQueue = new WriteQueue();
+await writeQueue.enqueue(() => db.mergeNode(...)); // Serialize writes
 ```
 
 ## Installation
