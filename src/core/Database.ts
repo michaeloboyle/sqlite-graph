@@ -53,7 +53,12 @@ import {
  * ```
  */
 export class GraphDatabase {
-  private db: Database.Database;
+  /**
+   * Underlying better-sqlite3 database instance
+   * Exposed for advanced usage (pragma settings, WAL mode, etc.)
+   * @readonly
+   */
+  public readonly db: Database.Database;
   private schema?: GraphSchema;
   private preparedStatements: Map<string, Database.Statement>;
 

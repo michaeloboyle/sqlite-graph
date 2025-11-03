@@ -59,3 +59,16 @@ export {
   validateNodeProperties,
   validateNodeId
 } from './utils/validation';
+
+// Concurrency utilities (production best practices)
+export {
+  enableWAL,
+  withRetry,
+  WriteQueue,
+  initializeConcurrency
+} from './utils/concurrency';
+
+export type {
+  WALOptions,
+  RetryOptions
+} from './utils/concurrency';
