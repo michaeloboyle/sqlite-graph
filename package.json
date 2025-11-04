@@ -1,6 +1,6 @@
 {
   "name": "sqlite-graph",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "High-performance graph database built on SQLite with a fluent query DSL",
   "license": "MIT",
   "author": "Michael O'Boyle",

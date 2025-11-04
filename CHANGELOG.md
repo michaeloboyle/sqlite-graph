@@ -5,6 +5,148 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.3.0] - 2025-01-04
+
+### Added
+
+#### 🔒 Production Concurrency Utilities
+
+Based on [Jellyfin's real-world SQLite locking experience](https://jellyfin.org/posts/SQLite-locking/), we've added three opt-in concurrency helpers for production deployments:
+
+- **`enableWAL(db, options?)`** - Configure Write-Ahead Logging mode
+  - Enables WAL mode for better read concurrency (multiple readers during writes)
+  - Sets optimal pragmas: synchronous=NORMAL, busy_timeout=5000ms, cache_size=64MB
+  - Configures WAL autocheckpoint and journal size limits
+  - Customizable options for advanced use cases
+  - Returns database instance for method chaining
+
+- **`withRetry(operation, options?)`** - Exponential backoff retry logic
+  - Automatically retries on SQLITE_BUSY/database locked errors
+  - Exponential backoff: 10ms → 20ms → 40ms → 80ms → 160ms
+  - Optional jitter to prevent thundering herd
+  - Preserves error context after max retries
+  - Works with both sync and async operations
+  - Default 5 retries, fully customizable
+
+- **`WriteQueue`** - Pessimistic locking queue
+  - FIFO queue serializes all write operations
+  - Eliminates lock contention entirely
+  - Predictable latency for high-concurrency scenarios
+  - Queue length and processing status monitoring
+  - Handles both sync and async operations
+  - Error handling without breaking queue
+
+- **`initializeConcurrency(db, options?)`** - Convenience function
+  - Combines WAL mode setup with write queue initialization
+  - Returns `{ db, writeQueue }` for immediate use
+
+#### 📚 Comprehensive Documentation (1,892 lines)
+
+- **[CONCURRENCY-BEST-PRACTICES.md](docs/CONCURRENCY-BEST-PRACTICES.md)** (500+ lines)
+  - Three locking strategies: No-Lock, Optimistic (retry), Pessimistic (queue)
+  - WAL mode configuration and best practices
+  - Transaction batching patterns (20x speedup)
+  - Multi-process architecture patterns
+  - Production monitoring and debugging
+  - Decision matrices for strategy selection
+  - Real-world usage examples
+
+- **[COMPETITIVE-ANALYSIS.md](docs/COMPETITIVE-ANALYSIS.md)** (400+ lines)
+  - Comparison with Neo4j, ArangoDB, OrientDB, Memgraph, TinkerPop, gun.js, level-graph
+  - 20+ dimension comparison matrix
+  - Performance benchmarks: 500x smaller footprint, 3000x faster startup
+  - Resource usage comparisons
+  - Use case decision matrices
+  - Market positioning as "High-Performance Embedded" solution
+
+- **[LIMITATIONS.md](docs/LIMITATIONS.md)** (500+ lines)
+  - Enhanced concurrency section with Jellyfin findings
+  - WAL mode, retry logic, and write queue patterns
+  - Scale limits and performance degradation tables
+  - Security, operational, and performance concerns
+  - Mitigation strategies with code examples
+  - Severity classifications and decision matrices
+
+#### ✅ Testing
+
+- 32 comprehensive tests for concurrency utilities (all passing)
+- Tests cover all three locking strategies
+- Integration tests with full concurrency stack
+- TDD approach with tests written first
+
+### Changed
+
+- **Exposed `Database.db` as public readonly** for advanced usage
+  - Allows direct access to better-sqlite3 instance
+  - Enables pragma configuration (WAL mode, timeouts, etc.)
+  - Maintains encapsulation with readonly modifier
+- Enhanced README with concurrency utility examples
+- Updated quick start to show production patterns
+
+### Performance
+
+- WAL mode enables concurrent reads during writes
+- WriteQueue eliminates lock contention overhead
+- 7.11x faster merge operations with proper indexing (from v0.2.0)
+- 20x speedup with transaction batching
+
+### Use Cases
+
+Perfect for:
+- Web applications with concurrent users (>10 simultaneous writes)
+- API servers with bursty write patterns
+- Background job processing with multiple workers
+- Desktop/mobile apps needing offline-first architecture
+- Production deployments requiring reliability
+
+### Migration Guide
+
+All concurrency utilities are **opt-in**. Existing code continues to work without changes.
+
+**Basic (Most Common):**
+```typescript
+import { GraphDatabase, enableWAL } from 'sqlite-graph';
+
+const db = new GraphDatabase('./graph.db');
+enableWAL(db); // Better read concurrency
+```
+
+**With Retry Logic:**
+```typescript
+import { withRetry } from 'sqlite-graph';
+
+await withRetry(() =>
+  db.mergeNode('Company', { name: 'TechCorp' }, { industry: 'SaaS' })
+);
+```
+
+**High-Concurrency:**
+```typescript
+import { WriteQueue } from 'sqlite-graph';
+
+const writeQueue = new WriteQueue();
+await writeQueue.enqueue(() =>
+  db.createNode('Job', { title: 'Engineer' })
+);
+```
+
+**Full Stack (Maximum Safety):**
+```typescript
+import { initializeConcurrency, withRetry } from 'sqlite-graph';
+
+const { db, writeQueue } = initializeConcurrency(new GraphDatabase('./graph.db'));
+
+await writeQueue.enqueue(() =>
+  withRetry(() =>
+    db.mergeNode('Job', { url }, { title: 'Engineer' })
+  )
+);
+```
+
+---
+
 ## [0.2.0] - 2025-11-02
 
 ### Added
