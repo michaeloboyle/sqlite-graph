@@ -1,0 +1,48 @@
+# Source files
+src/
+tests/
+benchmarks/
+examples/
+
+# Development files
+*.test.ts
+*.spec.ts
+tsconfig.json
+jest.config.js
+.eslintrc.js
+.prettierrc
+
+# Documentation (keep README, CHANGELOG, LICENSE, CONTRIBUTING)
+docs/
+CLAUDE.md
+.mcp.json
+
+# Claude Code & Development
+.claude/
+.claude-flow/
+.hive-mind/
+memory/
+scripts/
+*.db
+*.db-shm
+*.db-wal
+
+# Build artifacts
+coverage/
+*.log
+*.tsbuildinfo
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+.DS_Store
+node_modules/
