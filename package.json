@@ -4,6 +4,14 @@
   "description": "High-performance graph database built on SQLite with a fluent query DSL",
   "license": "MIT",
   "author": "Michael O'Boyle",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaeloboyle/sqlite-graph.git"
+  },
+  "homepage": "https://github.com/michaeloboyle/sqlite-graph#readme",
+  "bugs": {
+    "url": "https://github.com/michaeloboyle/sqlite-graph/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
