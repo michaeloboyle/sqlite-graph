@@ -640,6 +640,24 @@ describe('NodeQuery', () => {
 
       expect(countAll).toBe(countLimited);
     });
+
+    it('should use COUNT(DISTINCT) for both direction to avoid duplicates', () => {
+      // Create bidirectional relationship
+      const person1 = db.createNode('Person', { name: 'Alice' });
+      const person2 = db.createNode('Person', { name: 'Bob' });
+
+      // Create edges in both directions (simulating bidirectional KNOWS relationship)
+      db.createEdge(person1.id, 'KNOWS', person2.id);
+      db.createEdge(person2.id, 'KNOWS', person1.id);
+
+      // Count with 'both' direction should use DISTINCT to avoid counting duplicates
+      const count = db.nodes('Person')
+        .connectedTo('Person', 'KNOWS', 'both')
+        .count();
+
+      // Both persons should be counted once, not twice
+      expect(count).toBe(2);
+    });
   });
 
   describe('exists() predicate', () => {
