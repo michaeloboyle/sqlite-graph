@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { Node, NodeData, TraversalDirection, TraversalStep } from '../types';
+import { Node, TraversalStep } from '../types';
 import { deserialize, timestampToDate } from '../utils/serialization';
 
 /**

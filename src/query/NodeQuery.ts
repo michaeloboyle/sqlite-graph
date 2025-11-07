@@ -379,7 +379,7 @@ export class NodeQuery {
     // Add WHERE conditions
     const conditions: string[] = [`n.type = ?`];
 
-    for (const [key, _value] of this.whereConditions) {
+    for (const [key] of this.whereConditions) {
       conditions.push(`json_extract(n.properties, '$.${key}') = ?`);
     }
 
@@ -424,7 +424,7 @@ export class NodeQuery {
     params.push(this.nodeType);
 
     // Add WHERE condition values
-    for (const [_key, value] of this.whereConditions) {
+    for (const [, value] of this.whereConditions) {
       params.push(value);
     }
 
