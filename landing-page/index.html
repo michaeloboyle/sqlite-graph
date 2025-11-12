@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Vis.js Network Visualization -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -193,29 +195,69 @@
                 <h2 class="section-title">Built for modern applications</h2>
             </div>
             <div class="use-cases-grid">
-                <div class="use-case">
+                <div class="use-case" data-example="job-search">
                     <div class="use-case-icon">🔍</div>
                     <h3>Job Boards & Recruiting</h3>
                     <p>Connect jobs, companies, candidates, and skills. Query complex relationships instantly.</p>
-                    <a href="#" class="use-case-link">See example →</a>
+                    <div id="graph-job-search" class="graph-visualization"></div>
+                    <button class="animate-query-btn" data-target="job-search">▶ Run Query</button>
+                    <div class="code-snippet">
+                        <pre><code><span class="code-comment">// Find remote jobs matching my skills</span>
+<span class="code-keyword">const</span> jobs = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'HAS_SKILL'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-REQUIRES_SKILL'</span>)
+  .<span class="code-function">where</span>({ remote: <span class="code-keyword">true</span> })
+  .<span class="code-function">exec</span>();</code></pre>
+                    </div>
                 </div>
-                <div class="use-case">
+                <div class="use-case" data-example="ecommerce">
                     <div class="use-case-icon">🛒</div>
                     <h3>E-Commerce</h3>
                     <p>Product recommendations, user preferences, purchase history. Real-time personalization.</p>
-                    <a href="#" class="use-case-link">See example →</a>
+                    <div id="graph-ecommerce" class="graph-visualization"></div>
+                    <button class="animate-query-btn" data-target="ecommerce">▶ Run Query</button>
+                    <div class="code-snippet">
+                        <pre><code><span class="code-comment">// Recommend products based on purchases</span>
+<span class="code-keyword">const</span> recommended = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: userId })
+  .<span class="code-function">follow</span>(<span class="code-string">'PURCHASED'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-PURCHASED'</span>)
+  .<span class="code-function">groupBy</span>(<span class="code-string">'id'</span>)
+  .<span class="code-function">exec</span>();</code></pre>
+                    </div>
                 </div>
-                <div class="use-case">
+                <div class="use-case" data-example="social">
                     <div class="use-case-icon">👥</div>
                     <h3>Social Networks</h3>
                     <p>Friend graphs, follows, feeds. Scale to millions of connections effortlessly.</p>
-                    <a href="#" class="use-case-link">See example →</a>
+                    <div id="graph-social" class="graph-visualization"></div>
+                    <button class="animate-query-btn" data-target="social">▶ Run Query</button>
+                    <div class="code-snippet">
+                        <pre><code><span class="code-comment">// Friend-of-friend suggestions</span>
+<span class="code-keyword">const</span> suggestions = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">except</span>(myFriends)
+  .<span class="code-function">exec</span>();</code></pre>
+                    </div>
                 </div>
-                <div class="use-case">
+                <div class="use-case" data-example="crm">
                     <div class="use-case-icon">🎯</div>
                     <h3>CRM & Sales</h3>
                     <p>Company hierarchies, deal pipelines, contact networks. Track every relationship.</p>
-                    <a href="#" class="use-case-link">See example →</a>
+                    <div id="graph-crm" class="graph-visualization"></div>
+                    <button class="animate-query-btn" data-target="crm">▶ Run Query</button>
+                    <div class="code-snippet">
+                        <pre><code><span class="code-comment">// Find decision makers for deals</span>
+<span class="code-keyword">const</span> contacts = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'Deal'</span>, { stage: <span class="code-string">'negotiation'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'AT_COMPANY'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-WORKS_AT'</span>)
+  .<span class="code-function">where</span>({ role: <span class="code-string">'C-level'</span> })
+  .<span class="code-function">exec</span>();</code></pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -564,5 +606,6 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script src="js/examples.js"></script>
 </body>
 </html>
