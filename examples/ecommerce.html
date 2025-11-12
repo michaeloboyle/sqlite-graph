@@ -89,6 +89,14 @@
             <div class="code-section">
                 <h3>The Query</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">app.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Recommend products based on purchases from similar users</span>
 <span class="code-keyword">const</span> recommended = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: userId })
@@ -106,6 +114,14 @@
             <div class="code-section">
                 <h3>Advanced Recommendations</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">app.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Frequently bought together</span>
 <span class="code-keyword">const</span> bundle = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'Product'</span>, { id: productId })

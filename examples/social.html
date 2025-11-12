@@ -89,6 +89,14 @@
             <div class="code-section">
                 <h3>The Query</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">app.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Find friend-of-friend suggestions</span>
 <span class="code-keyword">const</span> suggestions = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
@@ -112,6 +120,14 @@ console.<span class="code-function">log</span>(suggestions);
             <div class="code-section">
                 <h3>Advanced Social Queries</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">app.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Find influential users (most connections)</span>
 <span class="code-keyword">const</span> influencers = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>)

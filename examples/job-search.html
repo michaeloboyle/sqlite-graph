@@ -143,6 +143,14 @@
             <div class="code-section">
                 <h3>The Query</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">app.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Find remote jobs matching my skills</span>
 <span class="code-keyword">const</span> jobs = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
@@ -163,6 +171,14 @@ console.<span class="code-function">log</span>(jobs);
             <div class="code-section">
                 <h3>Advanced Queries</h3>
                 <div class="code-snippet">
+                    <div class="code-snippet-header">
+                        <div class="code-snippet-dots">
+                            <div class="code-snippet-dot red"></div>
+                            <div class="code-snippet-dot yellow"></div>
+                            <div class="code-snippet-dot green"></div>
+                        </div>
+                        <div class="code-snippet-title">advanced.ts</div>
+                    </div>
                     <pre><code><span class="code-comment">// Find jobs at companies where my contacts work</span>
 <span class="code-keyword">const</span> referralJobs = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
