@@ -31,10 +31,7 @@ jobs:
     - name: Build
       run: npm run build
 
-    - name: Run tests
-      run: npm test -- --maxWorkers=1
-
-    - name: Check test coverage
+    - name: Run tests with coverage
       run: npm run test:coverage -- --maxWorkers=1
 
     - name: Upload coverage to Codecov
