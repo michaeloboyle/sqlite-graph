@@ -17,5 +17,8 @@ module.exports = {
     }
   },
   moduleFileExtensions: ['ts', 'js'],
-  verbose: true
+  verbose: true,
+  maxWorkers: '50%',
+  testTimeout: 30000,
+  workerIdleMemoryLimit: '512MB'
 };
