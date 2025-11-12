@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Network Example - sqlite-graph Cloud</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+    <style>
+        .example-page { padding: var(--space-3xl) 0; min-height: 100vh; }
+        .example-header { text-align: center; margin-bottom: var(--space-3xl); }
+        .example-title { font-size: 3rem; font-weight: 800; margin-bottom: var(--space-md); }
+        .example-subtitle { font-size: 1.25rem; color: var(--text-secondary); max-width: 768px; margin: 0 auto; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: var(--space-lg); }
+        .back-link:hover { color: var(--primary-dark); }
+        .graph-container { background: white; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: var(--space-xl); margin-bottom: var(--space-xl); }
+        .graph-visualization-large { width: 100%; height: 600px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: var(--space-lg); }
+        .graph-controls { display: flex; gap: var(--space-md); margin-bottom: var(--space-lg); }
+        .explanation { background: var(--bg-secondary); padding: var(--space-xl); border-radius: var(--radius-lg); margin-bottom: var(--space-xl); }
+        .explanation h3 { margin-bottom: var(--space-md); }
+        .code-section { margin-bottom: var(--space-xl); }
+        .code-section h3 { margin-bottom: var(--space-md); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="#FF6B35" stroke-width="2"/>
+                        <circle cx="10" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="22" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="16" cy="22" r="2" fill="#FF6B35"/>
+                        <line x1="10" y1="12" x2="22" y2="12" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="10" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="22" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                    </svg>
+                    <span class="logo-text">sqlite-graph</span>
+                    <span class="logo-badge">Cloud</span>
+                </div>
+                <div class="nav-links">
+                    <a href="../index.html">Home</a>
+                    <a href="../index.html#pricing">Pricing</a>
+                    <a href="#" class="nav-btn-primary">Start Free</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="example-page">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Back to Home</a>
+
+            <div class="example-header">
+                <h1 class="example-title">👥 Social Network</h1>
+                <p class="example-subtitle">
+                    Build friend suggestions, content feeds, and relationship discovery with graph-native queries
+                </p>
+            </div>
+
+            <div class="graph-container">
+                <h2>Interactive Graph Visualization</h2>
+                <div id="graph-social" class="graph-visualization-large"></div>
+                <div class="graph-controls">
+                    <button class="btn btn-primary" id="run-query">▶ Run Query</button>
+                    <button class="btn btn-secondary" id="reset-graph">⟳ Reset</button>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3>How It Works</h3>
+                <p>
+                    This example shows the classic "friend-of-friend" problem that's perfect for graph databases.
+                    The graph connects:
+                </p>
+                <ul>
+                    <li><strong>You</strong> - The current user</li>
+                    <li><strong>Direct Friends</strong> - Alice and Bob (your immediate connections)</li>
+                    <li><strong>Friend-of-Friends</strong> - Carol, Dave, Eve (people you might know)</li>
+                </ul>
+                <p>
+                    The query finds people who are 2 hops away - friends of your friends that you're not yet connected to.
+                    This is the basis for "People You May Know" features in social networks.
+                </p>
+            </div>
+
+            <div class="code-section">
+                <h3>The Query</h3>
+                <div class="code-snippet">
+                    <pre><code><span class="code-comment">// Find friend-of-friend suggestions</span>
+<span class="code-keyword">const</span> suggestions = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">except</span>(myFriends)
+  .<span class="code-function">groupBy</span>(<span class="code-string">'id'</span>)
+  .<span class="code-function">orderBy</span>(<span class="code-string">'count'</span>, <span class="code-string">'desc'</span>)
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Results show mutual friend count</span>
+console.<span class="code-function">log</span>(suggestions);
+<span class="code-comment">// [</span>
+<span class="code-comment">//   { id: 'dave', name: 'Dave', mutualFriends: 2 },</span>
+<span class="code-comment">//   { id: 'carol', name: 'Carol', mutualFriends: 1 },</span>
+<span class="code-comment">//   { id: 'eve', name: 'Eve', mutualFriends: 1 }</span>
+<span class="code-comment">// ]</span></code></pre>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <h3>Advanced Social Queries</h3>
+                <div class="code-snippet">
+                    <pre><code><span class="code-comment">// Find influential users (most connections)</span>
+<span class="code-keyword">const</span> influencers = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>)
+  .<span class="code-function">withCount</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">orderBy</span>(<span class="code-string">'count'</span>, <span class="code-string">'desc'</span>)
+  .<span class="code-function">limit</span>(<span class="code-number">10</span>)
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Find shortest path between two users</span>
+<span class="code-keyword">const</span> path = <span class="code-keyword">await</span> db
+  .<span class="code-function">shortestPath</span>(
+    { type: <span class="code-string">'User'</span>, id: userId1 },
+    { type: <span class="code-string">'User'</span>, id: userId2 },
+    { relationship: <span class="code-string">'FRIENDS_WITH'</span> }
+  )
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Find common interests with suggestions</span>
+<span class="code-keyword">const</span> withInterests = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'LIKES'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-LIKES'</span>)
+  .<span class="code-function">where</span>({ id: { not: <span class="code-string">'me'</span> } })
+  .<span class="code-function">groupBy</span>(<span class="code-string">'id'</span>)
+  .<span class="code-function">orderBy</span>(<span class="code-string">'count'</span>, <span class="code-string">'desc'</span>)
+  .<span class="code-function">limit</span>(<span class="code-number">20</span>)
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Build personalized feed</span>
+<span class="code-keyword">const</span> feed = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'FRIENDS_WITH'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'POSTED'</span>)
+  .<span class="code-function">orderBy</span>(<span class="code-string">'created_at'</span>, <span class="code-string">'desc'</span>)
+  .<span class="code-function">limit</span>(<span class="code-number">50</span>)
+  .<span class="code-function">exec</span>();</code></pre>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3>Real-World Benefits</h3>
+                <ul>
+                    <li><strong>Faster Growth</strong> - Users connect 3x faster with friend suggestions</li>
+                    <li><strong>Better Engagement</strong> - Personalized feeds increase time spent by 40%</li>
+                    <li><strong>Network Effects</strong> - Easier to discover communities and groups</li>
+                    <li><strong>Privacy</strong> - Fine-grained relationship controls (close friends, acquaintances, blocked)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 sqlite-graph. Built by <a href="https://oboyle.co">Michael O'Boyle</a>.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/examples.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const config = graphConfigs['social'];
+            const container = document.getElementById('graph-social');
+
+            const data = {
+                nodes: new vis.DataSet(config.nodes),
+                edges: new vis.DataSet(config.edges)
+            };
+
+            const options = {
+                ...graphOptions,
+                nodes: { ...graphOptions.nodes, size: 30, font: { size: 16, color: '#111827', face: 'Inter' } },
+                edges: { ...graphOptions.edges, width: 3, font: { size: 12 } }
+            };
+
+            const network = new vis.Network(container, data, options);
+            network.once('stabilizationIterationsDone', () => { network.setOptions({ physics: false }); });
+
+            document.getElementById('run-query').addEventListener('click', () => { animateQuery('social'); });
+            document.getElementById('reset-graph').addEventListener('click', () => {
+                data.nodes.get().forEach(node => data.nodes.update({ id: node.id, color: undefined, borderWidth: 2 }));
+                data.edges.get().forEach(edge => data.edges.update({ id: edge.id, color: { color: '#9CA3AF' }, width: 3 }));
+                network.fit({ animation: true });
+            });
+
+            networks['social'] = network;
+        });
+    </script>
+</body>
+</html>

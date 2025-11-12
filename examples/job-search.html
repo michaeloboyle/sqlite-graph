@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Board Example - sqlite-graph Cloud</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+    <style>
+        .example-page {
+            padding: var(--space-3xl) 0;
+            min-height: 100vh;
+        }
+        .example-header {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+        .example-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: var(--space-md);
+        }
+        .example-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 768px;
+            margin: 0 auto;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+        }
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+        .graph-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+        }
+        .graph-visualization-large {
+            width: 100%;
+            height: 600px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            margin-bottom: var(--space-lg);
+        }
+        .graph-controls {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+        .explanation {
+            background: var(--bg-secondary);
+            padding: var(--space-xl);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-xl);
+        }
+        .explanation h3 {
+            margin-bottom: var(--space-md);
+        }
+        .code-section {
+            margin-bottom: var(--space-xl);
+        }
+        .code-section h3 {
+            margin-bottom: var(--space-md);
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="#FF6B35" stroke-width="2"/>
+                        <circle cx="10" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="22" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="16" cy="22" r="2" fill="#FF6B35"/>
+                        <line x1="10" y1="12" x2="22" y2="12" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="10" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="22" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                    </svg>
+                    <span class="logo-text">sqlite-graph</span>
+                    <span class="logo-badge">Cloud</span>
+                </div>
+                <div class="nav-links">
+                    <a href="../index.html">Home</a>
+                    <a href="../index.html#pricing">Pricing</a>
+                    <a href="#" class="nav-btn-primary">Start Free</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="example-page">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Back to Home</a>
+
+            <div class="example-header">
+                <h1 class="example-title">🔍 Job Board & Recruiting</h1>
+                <p class="example-subtitle">
+                    Connect jobs, companies, candidates, and skills with graph queries that understand complex relationships
+                </p>
+            </div>
+
+            <div class="graph-container">
+                <h2>Interactive Graph Visualization</h2>
+                <div id="graph-job-search" class="graph-visualization-large"></div>
+                <div class="graph-controls">
+                    <button class="btn btn-primary" id="run-query">▶ Run Query</button>
+                    <button class="btn btn-secondary" id="reset-graph">⟳ Reset</button>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3>How It Works</h3>
+                <p>
+                    This example shows how a job board can use graph relationships to match candidates with relevant opportunities.
+                    The graph connects:
+                </p>
+                <ul>
+                    <li><strong>User</strong> - The job seeker (you)</li>
+                    <li><strong>Skills</strong> - Technologies and competencies (JavaScript, React)</li>
+                    <li><strong>Jobs</strong> - Open positions requiring specific skills</li>
+                    <li><strong>Companies</strong> - Organizations posting jobs</li>
+                </ul>
+                <p>
+                    When you click "Run Query", watch as the query traverses from your profile through your skills
+                    to find matching remote jobs at various companies.
+                </p>
+            </div>
+
+            <div class="code-section">
+                <h3>The Query</h3>
+                <div class="code-snippet">
+                    <pre><code><span class="code-comment">// Find remote jobs matching my skills</span>
+<span class="code-keyword">const</span> jobs = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'HAS_SKILL'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-REQUIRES_SKILL'</span>)
+  .<span class="code-function">where</span>({ remote: <span class="code-keyword">true</span> })
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Results include job details and company info</span>
+console.<span class="code-function">log</span>(jobs);
+<span class="code-comment">// [</span>
+<span class="code-comment">//   { id: 'frontend-dev', title: 'Frontend Developer', remote: true, company: 'Startup Inc' },</span>
+<span class="code-comment">//   { id: 'fullstack-dev', title: 'Full-Stack Developer', remote: true, company: 'Tech Corp' }</span>
+<span class="code-comment">// ]</span></code></pre>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <h3>Advanced Queries</h3>
+                <div class="code-snippet">
+                    <pre><code><span class="code-comment">// Find jobs at companies where my contacts work</span>
+<span class="code-keyword">const</span> referralJobs = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'User'</span>, { id: <span class="code-string">'me'</span> })
+  .<span class="code-function">follow</span>(<span class="code-string">'KNOWS'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'WORKS_AT'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-AT_COMPANY'</span>)
+  .<span class="code-function">where</span>({ status: <span class="code-string">'open'</span> })
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// Find jobs similar to my current role</span>
+<span class="code-keyword">const</span> similarJobs = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'Job'</span>, { id: myCurrentJobId })
+  .<span class="code-function">follow</span>(<span class="code-string">'REQUIRES_SKILL'</span>)
+  .<span class="code-function">follow</span>(<span class="code-string">'-REQUIRES_SKILL'</span>)
+  .<span class="code-function">where</span>({ id: { not: myCurrentJobId } })
+  .<span class="code-function">groupBy</span>(<span class="code-string">'id'</span>)
+  .<span class="code-function">orderBy</span>(<span class="code-string">'count'</span>, <span class="code-string">'desc'</span>)
+  .<span class="code-function">limit</span>(<span class="code-number">10</span>)
+  .<span class="code-function">exec</span>();</code></pre>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3>Real-World Benefits</h3>
+                <ul>
+                    <li><strong>Better Matches</strong> - Find jobs that truly match your skills, not just keyword searches</li>
+                    <li><strong>Warm Introductions</strong> - Discover opportunities through your network</li>
+                    <li><strong>Skill Growth</strong> - Identify adjacent skills to learn based on job requirements</li>
+                    <li><strong>Company Insights</strong> - See which companies are hiring for similar roles</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 sqlite-graph. Built by <a href="https://oboyle.co">Michael O'Boyle</a>.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/examples.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize graph with larger nodes for better visibility
+            const config = graphConfigs['job-search'];
+            const container = document.getElementById('graph-job-search');
+
+            const data = {
+                nodes: new vis.DataSet(config.nodes),
+                edges: new vis.DataSet(config.edges)
+            };
+
+            const options = {
+                ...graphOptions,
+                nodes: {
+                    ...graphOptions.nodes,
+                    size: 30,
+                    font: { size: 16, color: '#111827', face: 'Inter' }
+                },
+                edges: {
+                    ...graphOptions.edges,
+                    width: 3,
+                    font: { size: 12 }
+                }
+            };
+
+            const network = new vis.Network(container, data, options);
+
+            network.once('stabilizationIterationsDone', () => {
+                network.setOptions({ physics: false });
+            });
+
+            document.getElementById('run-query').addEventListener('click', () => {
+                animateQuery('job-search');
+            });
+
+            document.getElementById('reset-graph').addEventListener('click', () => {
+                const allNodes = data.nodes.get();
+                const allEdges = data.edges.get();
+
+                allNodes.forEach(node => {
+                    data.nodes.update({
+                        id: node.id,
+                        color: undefined,
+                        borderWidth: 2
+                    });
+                });
+
+                allEdges.forEach(edge => {
+                    data.edges.update({
+                        id: edge.id,
+                        color: { color: '#9CA3AF' },
+                        width: 3
+                    });
+                });
+
+                network.fit({ animation: true });
+            });
+
+            // Store network reference for animation
+            networks['job-search'] = network;
+        });
+    </script>
+</body>
+</html>
