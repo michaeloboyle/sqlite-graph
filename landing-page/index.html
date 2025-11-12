@@ -46,27 +46,27 @@
         <div class="container">
             <div class="hero-content">
                 <div class="hero-badge">
-                    <span class="badge-icon">🚀</span>
-                    Now in Public Beta - Free Hobby Tier
+                    <span class="badge-icon">🔧</span>
+                    Open Source • Local-First • SQLite Native
                 </div>
                 <h1 class="hero-title">
-                    Graph Database.<br/>
-                    <span class="gradient-text">Zero Ops.</span><br/>
-                    Built on SQLite.
+                    Build Graph Databases.<br/>
+                    <span class="gradient-text">With SQLite.</span><br/>
+                    Stay Local.
                 </h1>
                 <p class="hero-description">
-                    Production-ready graph database with the simplicity of SQLite.
-                    Deploy in seconds, scale automatically, pay only for what you use.
+                    Visual tools for designing, debugging, and optimizing graph relationships in SQLite.
+                    Your data stays on your machine. Your queries stay fast.
                 </p>
                 <div class="hero-cta">
-                    <a href="#signup" class="btn btn-primary btn-large">
-                        Start Building Free
+                    <a href="https://github.com/michaeloboyle/sqlite-graph" class="btn btn-primary btn-large">
+                        Get Started Free
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </a>
-                    <a href="#demo" class="btn btn-secondary btn-large">
-                        Watch Demo
+                    <a href="examples/job-search.html" class="btn btn-secondary btn-large">
+                        Live Examples
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M8 6L14 10L8 14V6Z" fill="currentColor"/>
                         </svg>
@@ -74,16 +74,16 @@
                 </div>
                 <div class="hero-stats">
                     <div class="stat">
-                        <div class="stat-value">500x</div>
-                        <div class="stat-label">Smaller Footprint</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">3000x</div>
-                        <div class="stat-label">Faster Startup</div>
-                    </div>
-                    <div class="stat">
                         <div class="stat-value">100%</div>
-                        <div class="stat-label">SQLite Compatible</div>
+                        <div class="stat-label">Local-First</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">Zero</div>
+                        <div class="stat-label">Cloud Dependency</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">Pure</div>
+                        <div class="stat-label">SQLite</div>
                     </div>
                 </div>
             </div>
@@ -98,19 +98,19 @@
                     <div class="code-content">
 <pre><code><span class="code-keyword">import</span> { GraphDatabase } <span class="code-keyword">from</span> <span class="code-string">'sqlite-graph'</span>;
 
-<span class="code-comment">// Connect to managed cloud database</span>
+<span class="code-comment">// Connect to local SQLite file</span>
 <span class="code-keyword">const</span> db = <span class="code-keyword">new</span> <span class="code-function">GraphDatabase</span>(
-  <span class="code-string">'cloud://your-db.sqlite-graph.io'</span>
+  <span class="code-string">'./my-graph.db'</span>
 );
 
-<span class="code-comment">// Query your graph</span>
+<span class="code-comment">// Query graph relationships</span>
 <span class="code-keyword">const</span> jobs = <span class="code-keyword">await</span> db
   .<span class="code-function">nodes</span>(<span class="code-string">'Job'</span>)
   .<span class="code-function">connectedTo</span>(<span class="code-string">'Company'</span>)
   .<span class="code-function">where</span>({ remote: <span class="code-keyword">true</span> })
   .<span class="code-function">exec</span>();
 
-<span class="code-comment">// That's it. No infrastructure to manage.</span></code></pre>
+<span class="code-comment">// Pure SQLite. No cloud. No dependencies.</span></code></pre>
                     </div>
                 </div>
             </div>
@@ -221,13 +221,13 @@
         </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section id="pricing" class="pricing">
+    <!-- Features Section -->
+    <section id="features" class="pricing">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Simple, transparent pricing</h2>
+                <h2 class="section-title">Everything you need to build graph databases</h2>
                 <p class="section-description">
-                    Start free. Scale as you grow. No hidden fees.
+                    Open source tools that run entirely on your machine. No subscriptions. No cloud required.
                 </p>
             </div>
             <div class="pricing-grid">
