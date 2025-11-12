@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="sqlite-graph Cloud - Managed graph database built on SQLite. Production-ready, zero-ops, pay-as-you-grow.">
+    <meta name="keywords" content="graph database, sqlite, cloud database, managed database, graph queries">
+    <title>sqlite-graph Cloud - Managed Graph Database Built on SQLite</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="#FF6B35" stroke-width="2"/>
+                        <circle cx="10" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="22" cy="12" r="2" fill="#FF6B35"/>
+                        <circle cx="16" cy="22" r="2" fill="#FF6B35"/>
+                        <line x1="10" y1="12" x2="22" y2="12" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="10" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                        <line x1="22" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                    </svg>
+                    <span class="logo-text">sqlite-graph</span>
+                    <span class="logo-badge">Cloud</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="#docs">Docs</a>
+                    <a href="https://github.com/michaeloboyle/sqlite-graph" target="_blank">GitHub</a>
+                    <a href="#signin" class="nav-btn-secondary">Sign In</a>
+                    <a href="#signup" class="nav-btn-primary">Start Free</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-icon">🚀</span>
+                    Now in Public Beta - Free Hobby Tier
+                </div>
+                <h1 class="hero-title">
+                    Graph Database.<br/>
+                    <span class="gradient-text">Zero Ops.</span><br/>
+                    Built on SQLite.
+                </h1>
+                <p class="hero-description">
+                    Production-ready graph database with the simplicity of SQLite.
+                    Deploy in seconds, scale automatically, pay only for what you use.
+                </p>
+                <div class="hero-cta">
+                    <a href="#signup" class="btn btn-primary btn-large">
+                        Start Building Free
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                    <a href="#demo" class="btn btn-secondary btn-large">
+                        Watch Demo
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M8 6L14 10L8 14V6Z" fill="currentColor"/>
+                        </svg>
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">500x</div>
+                        <div class="stat-label">Smaller Footprint</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">3000x</div>
+                        <div class="stat-label">Faster Startup</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">SQLite Compatible</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="code-window">
+                    <div class="code-header">
+                        <div class="code-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="code-title">app.ts</div>
+                    </div>
+                    <div class="code-content">
+<pre><code><span class="code-keyword">import</span> { GraphDatabase } <span class="code-keyword">from</span> <span class="code-string">'sqlite-graph'</span>;
+
+<span class="code-comment">// Connect to managed cloud database</span>
+<span class="code-keyword">const</span> db = <span class="code-keyword">new</span> <span class="code-function">GraphDatabase</span>(
+  <span class="code-string">'cloud://your-db.sqlite-graph.io'</span>
+);
+
+<span class="code-comment">// Query your graph</span>
+<span class="code-keyword">const</span> jobs = <span class="code-keyword">await</span> db
+  .<span class="code-function">nodes</span>(<span class="code-string">'Job'</span>)
+  .<span class="code-function">connectedTo</span>(<span class="code-string">'Company'</span>)
+  .<span class="code-function">where</span>({ remote: <span class="code-keyword">true</span> })
+  .<span class="code-function">exec</span>();
+
+<span class="code-comment">// That's it. No infrastructure to manage.</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <div class="container">
+            <p class="social-proof-text">Trusted by developers at</p>
+            <div class="social-proof-logos">
+                <div class="logo-placeholder">YC Startup</div>
+                <div class="logo-placeholder">Tech Corp</div>
+                <div class="logo-placeholder">Dev Agency</div>
+                <div class="logo-placeholder">Enterprise Co</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Everything you need.<br/>Nothing you don't.</h2>
+                <p class="section-description">
+                    Built for developers who want power without complexity.
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Deploy in Seconds</h3>
+                    <p class="feature-description">
+                        Create a production database with one command. No infrastructure setup, no complex configuration.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Production Concurrency</h3>
+                    <p class="feature-description">
+                        WAL mode, exponential backoff retries, and write queues handle thousands of concurrent operations.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Real-Time Metrics</h3>
+                    <p class="feature-description">
+                        Built-in monitoring dashboard shows query performance, throughput, and resource usage.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Automatic Backups</h3>
+                    <p class="feature-description">
+                        Point-in-time recovery with continuous backups. Restore to any second in the last 30 days.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Global CDN</h3>
+                    <p class="feature-description">
+                        Data replicated across regions for low-latency reads. Automatic failover for 99.99% uptime.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        Encryption at rest and in transit. SOC 2 Type II compliant. GDPR ready. SSO integration.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Built for modern applications</h2>
+            </div>
+            <div class="use-cases-grid">
+                <div class="use-case">
+                    <div class="use-case-icon">🔍</div>
+                    <h3>Job Boards & Recruiting</h3>
+                    <p>Connect jobs, companies, candidates, and skills. Query complex relationships instantly.</p>
+                    <a href="#" class="use-case-link">See example →</a>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">🛒</div>
+                    <h3>E-Commerce</h3>
+                    <p>Product recommendations, user preferences, purchase history. Real-time personalization.</p>
+                    <a href="#" class="use-case-link">See example →</a>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">👥</div>
+                    <h3>Social Networks</h3>
+                    <p>Friend graphs, follows, feeds. Scale to millions of connections effortlessly.</p>
+                    <a href="#" class="use-case-link">See example →</a>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">🎯</div>
+                    <h3>CRM & Sales</h3>
+                    <p>Company hierarchies, deal pipelines, contact networks. Track every relationship.</p>
+                    <a href="#" class="use-case-link">See example →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Simple, transparent pricing</h2>
+                <p class="section-description">
+                    Start free. Scale as you grow. No hidden fees.
+                </p>
+            </div>
+            <div class="pricing-grid">
+                <!-- Hobby Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3 class="pricing-tier">Hobby</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">$0</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <p class="pricing-description">Perfect for side projects and learning</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>100MB storage</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>10K operations/month</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Community support</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Daily backups</span>
+                        </div>
+                    </div>
+                    <a href="#signup" class="btn btn-secondary btn-full">Get Started</a>
+                </div>
+
+                <!-- Starter Tier -->
+                <div class="pricing-card pricing-card-popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="pricing-header">
+                        <h3 class="pricing-tier">Starter</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">$19</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <p class="pricing-description">For production applications</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>1GB storage</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>1M operations/month</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Email support</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Hourly backups</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>99.9% uptime SLA</span>
+                        </div>
+                    </div>
+                    <a href="#signup" class="btn btn-primary btn-full">Start Free Trial</a>
+                </div>
+
+                <!-- Pro Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3 class="pricing-tier">Pro</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">$99</span>
+                            <span class="price-period">/month</span>
+                        </div>
+                        <p class="pricing-description">For scaling teams</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>10GB storage</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>10M operations/month</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Priority support</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Continuous backups</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>99.99% uptime SLA</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Multi-region replication</span>
+                        </div>
+                    </div>
+                    <a href="#signup" class="btn btn-secondary btn-full">Start Free Trial</a>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3 class="pricing-tier">Enterprise</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">Custom</span>
+                        </div>
+                        <p class="pricing-description">For large-scale deployments</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Unlimited storage</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Unlimited operations</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Dedicated support</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Custom SLA</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Dedicated infrastructure</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M7 10L9 12L13 8" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>SSO & SAML</span>
+                        </div>
+                    </div>
+                    <a href="#contact" class="btn btn-secondary btn-full">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3 class="faq-question">How does sqlite-graph compare to Neo4j or ArangoDB?</h3>
+                    <p class="faq-answer">
+                        sqlite-graph is 500x smaller and 3000x faster to start. Perfect for embedded use cases,
+                        serverless functions, and applications that don't need a separate database server.
+                        For multi-TB graphs with complex analytics, consider Neo4j.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">Can I migrate from self-hosted to cloud?</h3>
+                    <p class="faq-answer">
+                        Yes! Export your data using db.export() and import it to sqlite-graph Cloud.
+                        Takes less than 5 minutes for most databases.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">What happens if I exceed my plan limits?</h3>
+                    <p class="faq-answer">
+                        We'll notify you at 80% and 100% usage. Operations continue with a small overage fee
+                        ($0.10 per 100K operations, $0.50 per GB storage). You can upgrade anytime.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">Is my data secure?</h3>
+                    <p class="faq-answer">
+                        Yes. All data is encrypted at rest (AES-256) and in transit (TLS 1.3). We're SOC 2 Type II
+                        compliant and GDPR ready. Enterprise plans include dedicated encryption keys.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">Can I use my existing SQLite database?</h3>
+                    <p class="faq-answer">
+                        Yes! sqlite-graph is fully SQLite compatible. Upload your existing .db file and add
+                        graph capabilities on top. Your existing queries continue to work.
+                    </p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">What's your uptime guarantee?</h3>
+                    <p class="faq-answer">
+                        Starter: 99.9% (43 minutes/month downtime)<br>
+                        Pro: 99.99% (4 minutes/month)<br>
+                        Enterprise: Custom SLA up to 99.999%
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to build?</h2>
+                <p class="cta-description">
+                    Start with our free Hobby tier. No credit card required.
+                </p>
+                <div class="cta-buttons">
+                    <a href="#signup" class="btn btn-primary btn-large">
+                        Create Free Account
+                    </a>
+                    <a href="#contact" class="btn btn-secondary-white btn-large">
+                        Talk to Sales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="14" stroke="#FF6B35" stroke-width="2"/>
+                            <circle cx="10" cy="12" r="2" fill="#FF6B35"/>
+                            <circle cx="22" cy="12" r="2" fill="#FF6B35"/>
+                            <circle cx="16" cy="22" r="2" fill="#FF6B35"/>
+                            <line x1="10" y1="12" x2="22" y2="12" stroke="#FF6B35" stroke-width="1.5"/>
+                            <line x1="10" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                            <line x1="22" y1="12" x2="16" y2="22" stroke="#FF6B35" stroke-width="1.5"/>
+                        </svg>
+                        <span>sqlite-graph</span>
+                    </div>
+                    <p class="footer-description">
+                        Graph database built on SQLite.<br/>
+                        Production-ready, zero-ops, pay-as-you-grow.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#docs">Documentation</a></li>
+                        <li><a href="#changelog">Changelog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#docs">API Reference</a></li>
+                        <li><a href="#guides">Guides</a></li>
+                        <li><a href="#examples">Examples</a></li>
+                        <li><a href="https://github.com/michaeloboyle/sqlite-graph">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#privacy">Privacy</a></li>
+                        <li><a href="#terms">Terms</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 sqlite-graph. Built by <a href="https://oboyle.co">Michael O'Boyle</a>.</p>
+                <div class="footer-social">
+                    <a href="https://github.com/michaeloboyle/sqlite-graph" aria-label="GitHub">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                        </svg>
+                    </a>
+                    <a href="https://twitter.com/sqlite_graph" aria-label="Twitter">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
