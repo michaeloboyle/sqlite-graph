@@ -26,7 +26,8 @@
     "bench": "node benchmarks/index.js",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "ci:status": "./scripts/check-ci.sh"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0"
