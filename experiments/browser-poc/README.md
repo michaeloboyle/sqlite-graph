@@ -36,11 +36,14 @@ browser-poc/
 ├── node-adapter.ts           # Node.js implementation (better-sqlite3)
 ├── browser-adapter.ts        # Browser implementation (wa-sqlite)
 ├── adapter.test.ts           # 19 interface compliance tests
-├── test.html                 # Manual browser testing page
+├── benchmark.ts              # Performance benchmark suite
+├── test.html                 # Manual browser functional tests
+├── benchmark.html            # Manual browser performance tests
 ├── docs/
 │   ├── browser-adapter-spec.md         # Requirements specification
 │   ├── browser-adapter-architecture.md # Design decisions
-│   └── poc-summary.md                  # Implementation summary
+│   ├── poc-summary.md                  # Implementation summary
+│   └── benchmark-results.md            # Performance test results
 └── README.md                 # This file
 ```
 
@@ -63,16 +66,27 @@ npm test
 
 **Note**: BrowserAdapter tests cannot run in Node.js (requires browser APIs). Node tests validate NodeAdapter only.
 
-### 4. Manual Browser Testing
+### 4. Run Node.js Performance Benchmarks
+```bash
+npm run bench
+```
+
+This generates `benchmark-node.json` with baseline performance metrics.
+
+### 5. Manual Browser Testing
 ```bash
 # Serve the directory with a local web server
 npx http-server . -p 8080
 
-# Open in browser
+# Open functional tests
 open http://localhost:8080/test.html
+
+# Open performance benchmarks
+open http://localhost:8080/benchmark.html
 ```
 
-Click "Run All Tests" to validate BrowserAdapter in your browser.
+**Functional tests:** Click "Run All Tests" to validate BrowserAdapter
+**Performance tests:** Run benchmarks and compare with Node.js baseline
 
 ## 🧪 Testing Strategy
 

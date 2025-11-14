@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Adapter Benchmark</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #007bff;
+      padding-bottom: 10px;
+    }
+
+    .benchmark-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .vfs-info {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    .metric {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+    }
+
+    .good {
+      color: #28a745;
+    }
+
+    .warning {
+      color: #ffc107;
+    }
+
+    .bad {
+      color: #dc3545;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      width: 100%;
+      height: 30px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #007bff;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    pre {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 400px;
+    }
+
+    .comparison-chart {
+      margin: 20px 0;
+    }
+
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-label {
+      width: 250px;
+      font-size: 14px;
+    }
+
+    .bar-container {
+      flex: 1;
+      height: 30px;
+      background: #e9ecef;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #007bff, #0056b3);
+      transition: width 0.5s;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Browser Adapter Performance Benchmark</h1>
+
+  <div class="vfs-info" id="vfs-info">
+    Detecting VFS backend...
+  </div>
+
+  <div class="benchmark-section">
+    <h2>Benchmark Controls</h2>
+    <button id="run-benchmark" onclick="runBenchmark()">Run Full Benchmark (10 tests × 5 iterations)</button>
+    <button id="export-json" onclick="exportJSON()" disabled>Export Results as JSON</button>
+    <button id="compare-node" onclick="compareWithNode()" disabled>Compare with Node.js</button>
+
+    <div id="progress-container" style="display: none; margin-top: 20px;">
+      <div class="progress">
+        <div class="progress-bar" id="progress-bar">0%</div>
+      </div>
+      <div id="progress-text" style="text-align: center; margin-top: 5px;">Starting...</div>
+    </div>
+  </div>
+
+  <div class="benchmark-section" id="results-section" style="display: none;">
+    <h2>Benchmark Results</h2>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Operation</th>
+          <th>Avg Time</th>
+          <th>Ops/Sec</th>
+          <th>Min</th>
+          <th>Max</th>
+          <th>Samples</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="benchmark-section" id="comparison-section" style="display: none;">
+    <h2>Browser vs Node.js Comparison</h2>
+    <div class="comparison-chart" id="comparison-chart"></div>
+    <p><strong>Target:</strong> Browser should be <2x slower than Node.js</p>
+  </div>
+
+  <div class="benchmark-section">
+    <h2>Raw Data (JSON)</h2>
+    <pre id="json-output">Run benchmark to see results...</pre>
+  </div>
+
+  <script type="module">
+    import { BrowserAdapter } from './dist/browser-adapter.js';
+
+    let benchmarkResults = null;
+    let nodeResults = null;
+
+    // Detect VFS
+    async function detectVFS() {
+      try {
+        const adapter = await BrowserAdapter.create(':memory:');
+        const vfs = adapter.getVFS();
+        await adapter.close();
+
+        const vfsNames = {
+          'opfs': 'OPFS (Origin Private File System)',
+          'idb': 'IndexedDB',
+          'memdb': 'In-Memory'
+        };
+
+        const vfsInfo = document.getElementById('vfs-info');
+        vfsInfo.innerHTML = `
+          <strong>VFS Backend:</strong> ${vfsNames[vfs] || vfs}<br>
+          <strong>Browser:</strong> ${navigator.userAgent.split(' ').pop()}<br>
+          <strong>Platform:</strong> ${navigator.platform}
+        `;
+      } catch (error) {
+        document.getElementById('vfs-info').innerHTML = `
+          <strong>Error:</strong> ${error.message}
+        `;
+      }
+    }
+
+    detectVFS();
+
+    // Benchmark runner
+    class BrowserBenchmarker {
+      constructor() {
+        this.results = [];
+      }
+
+      async runBenchmark(name, setup, operation, teardown, iterations = 5) {
+        const samples = [];
+
+        for (let i = 0; i < iterations; i++) {
+          const adapter = await BrowserAdapter.create(':memory:');
+          await setup(adapter);
+
+          const start = performance.now();
+          await operation(adapter);
+          const elapsed = performance.now() - start;
+
+          await teardown(adapter);
+          await adapter.close();
+
+          samples.push(elapsed);
+        }
+
+        const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+        const min = Math.min(...samples);
+        const max = Math.max(...samples);
+        const opsPerSec = 1000 / avg;
+
+        this.results.push({
+          name,
+          avgTime: avg,
+          opsPerSec,
+          min,
+          max,
+          samples
+        });
+
+        return { avg, opsPerSec };
+      }
+
+      getResults() {
+        return {
+          timestamp: new Date().toISOString(),
+          platform: 'browser',
+          userAgent: navigator.userAgent,
+          results: this.results
+        };
+      }
+    }
+
+    window.runBenchmark = async function() {
+      const button = document.getElementById('run-benchmark');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+
+      button.disabled = true;
+      progressContainer.style.display = 'block';
+
+      const bench = new BrowserBenchmarker();
+      const tests = [
+        {
+          name: 'Database Creation',
+          setup: async () => {},
+          operation: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Single Insert',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            stmt.run('test value');
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Batch Insert (100 rows)',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            for (let i = 0; i < 100; i++) {
+              stmt.run(`value ${i}`);
+            }
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Transaction Insert (1000 rows)',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+          },
+          operation: async (adapter) => {
+            await adapter.transaction(async () => {
+              const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+              for (let i = 0; i < 1000; i++) {
+                stmt.run(`value ${i}`);
+              }
+              stmt.finalize();
+            });
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Select Single Row',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            for (let i = 0; i < 1000; i++) {
+              stmt.run(`value ${i}`);
+            }
+            stmt.finalize();
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('SELECT * FROM test WHERE id = ?');
+            stmt.get(500);
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Select All (1000 rows)',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            for (let i = 0; i < 1000; i++) {
+              stmt.run(`value ${i}`);
+            }
+            stmt.finalize();
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('SELECT * FROM test');
+            stmt.all();
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Update Single Row',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            for (let i = 0; i < 1000; i++) {
+              stmt.run(`value ${i}`);
+            }
+            stmt.finalize();
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('UPDATE test SET value = ? WHERE id = ?');
+            stmt.run('updated', 500);
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Delete Single Row',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+            const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+            for (let i = 0; i < 1000; i++) {
+              stmt.run(`value ${i}`);
+            }
+            stmt.finalize();
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare('DELETE FROM test WHERE id = ?');
+            stmt.run(500);
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Graph Traversal (BFS)',
+          setup: async (adapter) => {
+            await adapter.exec(`
+              CREATE TABLE nodes (id INTEGER PRIMARY KEY, type TEXT);
+              CREATE TABLE edges (source INTEGER, target INTEGER);
+            `);
+            const nodeStmt = await adapter.prepare('INSERT INTO nodes (type) VALUES (?)');
+            for (let i = 0; i < 5; i++) {
+              nodeStmt.run('TestNode');
+            }
+            nodeStmt.finalize();
+            const edgeStmt = await adapter.prepare('INSERT INTO edges (source, target) VALUES (?, ?)');
+            edgeStmt.run(1, 2);
+            edgeStmt.run(1, 3);
+            edgeStmt.run(2, 4);
+            edgeStmt.run(2, 5);
+            edgeStmt.finalize();
+          },
+          operation: async (adapter) => {
+            const stmt = await adapter.prepare(`
+              WITH RECURSIVE traverse(id, depth) AS (
+                SELECT 1 as id, 0 as depth
+                UNION ALL
+                SELECT e.target, t.depth + 1
+                FROM traverse t
+                JOIN edges e ON e.source = t.id
+                WHERE t.depth < 10
+              )
+              SELECT * FROM traverse JOIN nodes ON traverse.id = nodes.id
+            `);
+            stmt.all();
+            stmt.finalize();
+          },
+          teardown: async () => {}
+        },
+        {
+          name: 'Transaction Rollback',
+          setup: async (adapter) => {
+            await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)');
+          },
+          operation: async (adapter) => {
+            try {
+              await adapter.transaction(async () => {
+                const stmt = await adapter.prepare('INSERT INTO test (value) VALUES (?)');
+                stmt.run('test');
+                stmt.finalize();
+                throw new Error('Intentional rollback');
+              });
+            } catch (e) {
+              // Expected
+            }
+          },
+          teardown: async () => {}
+        }
+      ];
+
+      for (let i = 0; i < tests.length; i++) {
+        const test = tests[i];
+        const progress = ((i + 1) / tests.length) * 100;
+
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+        progressText.textContent = `Running: ${test.name} (${i + 1}/${tests.length})`;
+
+        await bench.runBenchmark(test.name, test.setup, test.operation, test.teardown);
+      }
+
+      benchmarkResults = bench.getResults();
+
+      // Display results
+      displayResults(benchmarkResults);
+
+      progressContainer.style.display = 'none';
+      button.disabled = false;
+      document.getElementById('export-json').disabled = false;
+      document.getElementById('compare-node').disabled = false;
+    };
+
+    function displayResults(results) {
+      const tbody = document.getElementById('results-body');
+      tbody.innerHTML = '';
+
+      results.results.forEach(result => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${result.name}</td>
+          <td class="metric">${result.avgTime.toFixed(2)}ms</td>
+          <td class="metric">${result.opsPerSec.toFixed(0)}</td>
+          <td class="metric">${result.min.toFixed(2)}ms</td>
+          <td class="metric">${result.max.toFixed(2)}ms</td>
+          <td>${result.samples.length}</td>
+        `;
+      });
+
+      document.getElementById('results-section').style.display = 'block';
+      document.getElementById('json-output').textContent = JSON.stringify(results, null, 2);
+    }
+
+    window.exportJSON = function() {
+      if (!benchmarkResults) return;
+
+      const blob = new Blob([JSON.stringify(benchmarkResults, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `benchmark-browser-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    window.compareWithNode = async function() {
+      if (!benchmarkResults) return;
+
+      try {
+        const response = await fetch('./benchmark-node.json');
+        nodeResults = await response.json();
+
+        const comparisonDiv = document.getElementById('comparison-chart');
+        comparisonDiv.innerHTML = '<div class="bar-chart"></div>';
+        const chartDiv = comparisonDiv.querySelector('.bar-chart');
+
+        benchmarkResults.results.forEach((browserResult, i) => {
+          const nodeResult = nodeResults.results[i];
+          const ratio = browserResult.avgTime / nodeResult.nodeAdapter.avgTime;
+
+          let colorClass = 'good';
+          if (ratio > 2) colorClass = 'bad';
+          else if (ratio > 1.5) colorClass = 'warning';
+
+          const barRow = document.createElement('div');
+          barRow.className = 'bar-row';
+
+          const maxTime = Math.max(browserResult.avgTime, nodeResult.nodeAdapter.avgTime);
+          const browserWidth = (browserResult.avgTime / maxTime) * 100;
+          const nodeWidth = (nodeResult.nodeAdapter.avgTime / maxTime) * 100;
+
+          barRow.innerHTML = `
+            <div class="bar-label">${browserResult.name}</div>
+            <div style="flex: 1;">
+              <div style="margin-bottom: 5px;">
+                <strong>Browser:</strong> ${browserResult.avgTime.toFixed(2)}ms
+                <div class="bar-container">
+                  <div class="bar-fill" style="width: ${browserWidth}%; background: #007bff;">
+                    ${browserResult.opsPerSec.toFixed(0)} ops/s
+                  </div>
+                </div>
+              </div>
+              <div>
+                <strong>Node.js:</strong> ${nodeResult.nodeAdapter.avgTime.toFixed(2)}ms
+                <div class="bar-container">
+                  <div class="bar-fill" style="width: ${nodeWidth}%; background: #28a745;">
+                    ${nodeResult.nodeAdapter.opsPerSec.toFixed(0)} ops/s
+                  </div>
+                </div>
+              </div>
+              <div class="metric ${colorClass}" style="text-align: center; margin-top: 5px;">
+                ${ratio.toFixed(2)}x slower
+              </div>
+            </div>
+          `;
+
+          chartDiv.appendChild(barRow);
+        });
+
+        document.getElementById('comparison-section').style.display = 'block';
+      } catch (error) {
+        alert('Could not load Node.js benchmark results. Make sure benchmark-node.json exists.');
+      }
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@journeyapps/wa-sqlite@1.3.1/dist/wa-sqlite-async.mjs" type="module"></script>
+</body>
+</html>
