@@ -76,6 +76,18 @@ const { node, created } = db.mergeNode('Company',
 
 ## Installation
 
+⚠️ **Not yet published to npm** - Currently alpha/development only
+
+```bash
+# For now, clone and build locally:
+git clone https://github.com/michaeloboyle/sqlite-graph.git
+cd sqlite-graph
+npm install
+npm run build
+npm test  # 294 tests passing
+```
+
+When published (target: late December 2025):
 ```bash
 npm install sqlite-graph
 ```
@@ -133,13 +145,14 @@ See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology d
 
 ## Documentation
 
-- [Development Plan](PLAN.md) - Comprehensive project roadmap
-- [SPARC Methodology](docs/SPARC-DEVELOPMENT.md) - Development approach
+- [Alpha Status Summary](docs/ALPHA-STATUS.md) - Honest assessment of production readiness
+- [Test Coverage Summary](docs/TEST-COVERAGE-SUMMARY.md) - Test status and coverage gaps
+- [Competitive Analysis](docs/COMPETITORS.md) - Market analysis vs 9 direct competitors
 - [Performance Benchmarks](docs/BENCHMARKS.md) - Detailed performance analysis and methodology
 - [Concurrency Best Practices](docs/CONCURRENCY-BEST-PRACTICES.md) - Production concurrency patterns and WAL mode
 - [Limitations](docs/LIMITATIONS.md) - Known limitations and workarounds
-- [Competitive Analysis](docs/COMPETITIVE-ANALYSIS.md) - Comparison with Neo4j, ArangoDB, and alternatives
 - [API Reference](docs/API.md) - Full API documentation (1,398 lines)
+- [SPARC Methodology](docs/SPARC-DEVELOPMENT.md) - Development approach
 - [Examples](examples/) - Usage examples including 750-line job pipeline
 
 ## Roadmap
@@ -251,18 +264,27 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ---
 
-**Status:** Phase 1-3 Complete ✅ | Phase 4 (Browser Support) In Progress 🚀
+**Status:** 🟡 Alpha - Phase 1-3 Complete | Phase 4 (Browser Support) In Progress
 **Current Phase:** Building v1.0 with universal browser support (6-week timeline)
-**Test Status:** 234 tests passing (Node.js) + 19 adapter tests passing
-**Major Pivot:** Becoming the ONLY TypeScript graph DB that works everywhere
+**Test Status:** 294 tests passing | 2 suites with memory issues | ~75-80% coverage (estimated)
+**Not Production Ready:** Memory crashes in coverage tests, missing npm publish config
 
-**Recent Milestones:**
+**What Works:**
 - ✅ Complete CRUD operations with transactions
 - ✅ Fluent query DSL (NodeQuery, TraversalQuery)
 - ✅ Graph algorithms (BFS, shortest path, cycle detection)
 - ✅ Merge operations (mergeNode, mergeEdge) with index management
 - ✅ Performance benchmarks (all targets exceeded, 7.11x index speedup)
-- 🚀 **NEW:** Browser support strategy (wa-sqlite + OPFS)
-- 🚀 **NEW:** Adapter pattern POC with TDD (19 tests passing)
+- ✅ Concurrency utilities (WAL mode, retry logic, write queues)
 
-**Next:** v1.0.0 with Node.js + browser support (~6 weeks)
+**In Progress:**
+- 🚧 Browser support strategy (wa-sqlite + OPFS)
+- 🚧 Adapter pattern POC with TDD (19 tests passing)
+- 🚧 Fixing TraversalQuery memory issues
+
+**Known Issues:**
+- ⚠️ Jest worker memory crashes on coverage runs (TraversalQuery.test.ts)
+- ⚠️ Not published to npm (missing `files` field in package.json)
+- ⚠️ Some coverage gaps (Schema.ts, serialization.ts edge cases)
+
+**Next:** Fix memory issues → npm publish → v1.0.0 with browser support (~6-8 weeks)
