@@ -35,7 +35,15 @@ export class NodeAdapter implements SQLiteAdapter {
   }
 
   static async create(path: string, options?: AdapterOptions): Promise<NodeAdapter> {
-    const db = new Database(path, options);
+    // Map AdapterOptions to better-sqlite3 Options
+    const dbOptions: Database.Options | undefined = options ? {
+      readonly: options.readonly,
+      fileMustExist: options.fileMustExist,
+      timeout: options.timeout,
+      verbose: options.verbose as any // Type compatibility handled at runtime
+    } : undefined;
+
+    const db = new Database(path, dbOptions);
     return new NodeAdapter(db);
   }
 
@@ -49,11 +57,16 @@ export class NodeAdapter implements SQLiteAdapter {
   }
 
   async transaction<T>(fn: () => Promise<T>): Promise<T> {
-    // better-sqlite3 transactions are sync, wrap in async
-    const txn = this.db.transaction(async () => {
-      return await fn();
-    });
-    return txn();
+    // better-sqlite3 transactions need to be sync, so we manually handle BEGIN/COMMIT/ROLLBACK
+    this.db.prepare('BEGIN').run();
+    try {
+      const result = await fn();
+      this.db.prepare('COMMIT').run();
+      return result;
+    } catch (error) {
+      this.db.prepare('ROLLBACK').run();
+      throw error;
+    }
   }
 
   async pragma(setting: string, value?: any): Promise<any> {
