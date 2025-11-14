@@ -274,7 +274,7 @@ describe('PatternQuery', () => {
       const results = db.pattern()
         .start('person', 'Person')
         .orderBy('person', 'age', 'asc')
-        .exec();
+        .exec() as any[];
 
       expect(results[0].person.properties.age).toBe(21);
       expect(results[results.length - 1].person.properties.age).toBe(30);
@@ -284,7 +284,7 @@ describe('PatternQuery', () => {
       const results = db.pattern()
         .start('person', 'Person')
         .orderBy('person', 'age', 'desc')
-        .exec();
+        .exec() as any[];
 
       expect(results[0].person.properties.age).toBe(30);
       expect(results[results.length - 1].person.properties.age).toBe(21);

@@ -1,7 +1,7 @@
 # Phase 3 Implementation Progress
 
 **Date:** November 14, 2025
-**Status:** 🟡 In Progress (56% tests passing)
+**Status:** ✅ Pattern Matching Complete (100% tests passing)
 **Approach:** TDD with SPARC methodology
 
 ## Overview
@@ -42,117 +42,93 @@ Phase 3 implements pattern matching and bulk operations using IP-safe fluent Typ
   - 18 passing (56%)
   - 14 failing (need single-node pattern support)
 
-## 🔧 Remaining Work (RED → GREEN)
+## ✅ Completed Fixes (RED → GREEN → 100%)
 
-### Critical Fix: Single-Node Pattern Support
+### Single-Node Pattern Support - IMPLEMENTED ✅
 
-**Problem:** Tests fail when pattern has no edges (simple node queries)
+**Solution Implemented:**
 
-**Error:**
-```
-PatternError: Pattern must have at least one edge traversal using through()
-```
-
-**Affected Tests** (14 failing):
-- Filtering tests (5) - `where()`, `filter()`, combinations
-- Pagination tests (3) - `limit()`, `offset()`
-- Helper methods (4) - `first()`, `count()`, `exists()`
-- Direction handling (2) - `both` direction logic
-
-**Solution Required:**
-
-1. **Allow single-node patterns** (remove edge requirement check):
+1. **Updated validation** to allow single-node patterns where start and end reference same variable:
 ```typescript
-// src/query/PatternQuery.ts:299-304
-// REMOVE this validation:
-if (edgeCount === 0 && !this.isCyclic) {
-  throw new PatternError(
-    'Pattern must have at least one edge traversal using through()',
-    'INVALID_PATTERN'
-  );
-}
+// src/query/PatternQuery.ts:305-318
+if (edgeCount === 0) {
+  const startVar = this.patternSteps.find((s) => s.isStart)?.variableName;
+  const endVar = this.patternSteps.find((s) => s.isEnd)?.variableName;
 
-// Single-node patterns ARE valid - they're just filtered node queries
-```
-
-2. **Add single-node SQL generation**:
-```typescript
-private buildSQL(): { sql: string; params: any[] } {
-  const edgeCount = this.patternSteps.filter(s => s.type === 'edge').length;
-
-  if (edgeCount === 0) {
-    // Simple SELECT for single node
-    return this.buildSingleNodeSQL();
+  if (startVar !== endVar) {
+    throw new PatternError(
+      'Pattern must have at least one edge traversal using through()',
+      'INVALID_PATTERN'
+    );
   }
-
-  // Existing CTE logic for multi-hop patterns
-  return this.buildMultiHopSQL();
 }
+// Allows: .start('person').end('person') ✅
+// Rejects: .start('person').end('company') ❌
+```
 
+2. **Added buildSingleNodeSQL() method** for node-only queries:
+```typescript
+// src/query/PatternQuery.ts:448-493
 private buildSingleNodeSQL(): { sql: string; params: any[] } {
-  const startStep = this.patternSteps.find(s => s.isStart)!;
+  const startStep = this.patternSteps.find((s) => s.isStart)!;
   const varName = startStep.variableName!;
   const filter = this.filters.get(varName) || {};
 
-  let sql = `SELECT
-    id as ${varName}_id,
-    type as ${varName}_type,
-    properties as ${varName}_properties,
-    created_at as ${varName}_created_at,
-    updated_at as ${varName}_updated_at
-  FROM nodes
-  WHERE type = ?`;
-
+  let sql = `SELECT id as ${varName}_id, type as ${varName}_type, properties as ${varName}_properties, created_at as ${varName}_created_at, updated_at as ${varName}_updated_at FROM nodes WHERE type = ?`;
   const params = [startStep.nodeType || varName];
 
-  // Add filters
-  if (Object.keys(filter).length > 0) {
-    const { whereSql, whereParams } = this.buildFilterSQL(filter);
-    sql += ` AND ${whereSql}`;
-    params.push(...whereParams);
-  }
-
-  // Add ORDER BY
-  if (this.orderByClause) {
-    sql += ` ORDER BY json_extract(properties, '$.${this.orderByClause.field}') ${this.orderByClause.direction.toUpperCase()}`;
-  }
-
-  // Add LIMIT/OFFSET
-  if (this.limitValue) sql += ` LIMIT ${this.limitValue}`;
-  if (this.offsetValue) sql += ` OFFSET ${this.offsetValue}`;
-
+  // Property filters, ORDER BY, LIMIT/OFFSET all supported ✅
   return { sql, params };
 }
 ```
 
-3. **Fix "both" direction JOIN logic**:
+3. **Fixed PatternNodeBuilder chaining** to maintain builder context:
 ```typescript
-// Current "both" direction creates cartesian product
-// Need UNION approach or better JOIN condition
+// src/query/PatternNodeBuilder.ts:50-77
+limit(count: number): this { this.query.limit(count); return this; }
+offset(count: number): this { this.query.offset(count); return this; }
+orderBy(...): this { this.query.orderBy(...); return this; }
+```
+
+4. **Fixed OFFSET without LIMIT** SQLite requirement:
+```typescript
+// src/query/PatternQuery.ts:481-490
+if (this.limitValue !== undefined) {
+  sql += ` LIMIT ${this.limitValue}`;
+  if (this.offsetValue !== undefined) {
+    sql += ` OFFSET ${this.offsetValue}`;
+  }
+} else if (this.offsetValue !== undefined) {
+  sql += ` LIMIT -1 OFFSET ${this.offsetValue}`; // SQLite requires LIMIT
+}
+```
+
+5. **Enhanced PatternNodeBuilder.where()** to support both filter forms:
+```typescript
+// Supports: .where({ name: 'Alice' }) - node-specific ✅
+// Supports: .where({ person: { name: 'Alice' } }) - global form ✅
 ```
 
 ## 📊 Test Results
 
 ```
-Test Suites: 1 failed, 1 total
-Tests:       14 failed, 18 passed, 32 total (56% passing)
+Test Suites: 1 passed, 1 total
+Tests:       32 passed, 32 total (100% ✅)
 
-✅ PASSING (18 tests):
+✅ ALL PASSING (32 tests):
 - Builder structure and method chaining (6)
 - 2-hop pattern execution (3)
-- Direction handling: out, in (2)
+- Direction handling: out, in, both (3)
 - Variable selection (2)
 - Multi-hop patterns (3+ hops) (1)
 - Cyclic pattern detection (1)
 - Error handling validation (3)
-
-❌ FAILING (14 tests):
-- Filtering: where(), filter() combinations (5)
+- Filtering: where(), filter() with all operators (5)
 - Pagination: limit(), offset() (3)
-- Helper methods: first(), count(), exists() (4)
-- Direction handling: both (2)
+- Ordering: orderBy() asc/desc (2)
+- Helper methods: first(), count(), exists() (3)
 
-All failures due to: single-node pattern not supported
+GREEN PHASE ACHIEVED: 100% test pass rate
 ```
 
 ## 🎯 Files Created/Modified
@@ -172,19 +148,15 @@ All failures due to: single-node pattern not supported
 
 ## 🚀 Next Steps
 
-### Immediate (Fix failing tests):
-1. Remove single-node pattern restriction in validatePattern()
-2. Add buildSingleNodeSQL() method
-3. Refactor buildSQL() to handle both cases
-4. Fix "both" direction JOIN logic
-5. Run tests → expect 32/32 passing
+### ✅ Phase 3A Complete - Pattern Matching (100% tests passing)
+All pattern matching features implemented and tested with TDD approach.
 
-### Then Continue:
-6. Implement bulk operations (createNodes, createEdges, etc.)
-7. Write bulk operation tests
-8. Add performance benchmarks
-9. Update API documentation
-10. Update README to mark Phase 3 complete
+### Phase 3B - Remaining Work:
+1. Implement bulk operations (createNodes, createEdges, updateNodes, deleteNodes)
+2. Write bulk operation tests
+3. Add performance benchmarks (pattern matching: <100ms for 10k nodes)
+4. Update API documentation with pattern matching examples
+5. Update README to mark Phase 3 complete
 
 ## 📝 API Examples
 
@@ -282,13 +254,22 @@ const first10 = db.pattern()
 - **Nov 14, 2:00 PM**: Type system implementation (100%)
 - **Nov 14, 4:00 PM**: PatternQuery implementation (56% tests passing)
 
-**Estimated Completion:**
-- Fix single-node patterns: 2-3 hours
+**Timeline:**
+- **Nov 14, 10:00 AM**: IP analysis, pivot from Cypher to fluent API
+- **Nov 14, 11:00 AM**: SPARC specification complete
+- **Nov 14, 12:00 PM**: Architecture design complete
+- **Nov 14, 2:00 PM**: Type system implementation (100%)
+- **Nov 14, 4:00 PM**: PatternQuery implementation (56% tests passing)
+- **Nov 14, 6:00 PM**: Pattern matching complete (100% tests passing) ✅
+
+**Actual Time to 100% GREEN: ~8 hours from start**
+
+**Remaining Estimate:**
 - Implement bulk operations: 1 day
 - Integration testing: 1 day
 - Documentation: 0.5 days
 
-**Total: 2-3 days to Phase 3 complete**
+**Total: 1.5-2 days to full Phase 3 complete**
 
 ## 🤖 AI-Generated Code
 
@@ -302,4 +283,6 @@ Development methodology: [docs/SPARC-DEVELOPMENT.md](SPARC-DEVELOPMENT.md)
 
 ---
 
-**Next Action:** Fix single-node pattern support to achieve 100% test passing (GREEN phase).
+**Status Update:** Pattern matching implementation complete with 100% test pass rate achieved through systematic TDD approach.
+
+**Next Action:** Implement bulk operations (Phase 3B) to complete Phase 3 specification.

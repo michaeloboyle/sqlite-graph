@@ -18,10 +18,28 @@ export class PatternNodeBuilder<T extends Record<string, any>> {
   ) {}
 
   /**
-   * Add property filter to current node
+   * Add property filter - supports both node-specific and global filter forms
+   * Node-specific: .where({ name: 'Alice' })
+   * Global: .where({ person: { name: 'Alice' } })
    */
-  where(filter: PropertyFilter): this {
-    this.query.addNodeFilter(this.currentVariable, filter);
+  where(filter: PropertyFilter | Record<string, PropertyFilter>): this {
+    // Check if this is a global filter (has variable names as keys)
+    const keys = Object.keys(filter);
+    if (keys.length > 0 && typeof filter[keys[0]] === 'object' && filter[keys[0]] !== null) {
+      // Could be global filter like { person: { name: 'Alice' } }
+      // Or could be node filter with operator like { age: { $gt: 25 } }
+      const firstValue = filter[keys[0]] as any;
+      const hasOperator = Object.keys(firstValue).some(k => k.startsWith('$'));
+
+      if (!hasOperator && keys.includes(this.currentVariable)) {
+        // Global filter form - delegate to PatternQuery.where()
+        this.query.where(filter);
+        return this;
+      }
+    }
+
+    // Node-specific filter - add to current variable
+    this.query.addNodeFilter(this.currentVariable, filter as PropertyFilter);
     return this;
   }
 
@@ -39,29 +57,41 @@ export class PatternNodeBuilder<T extends Record<string, any>> {
   /**
    * Choose which variables to return (proxy to PatternQuery)
    */
-  select(variables: string[]): any {
-    return this.query.select(variables);
+  select(variables: string[]): this {
+    this.query.select(variables);
+    return this;
   }
 
   /**
    * Limit results (proxy to PatternQuery)
    */
-  limit(count: number): any {
-    return this.query.limit(count);
+  limit(count: number): this {
+    this.query.limit(count);
+    return this;
   }
 
   /**
    * Skip results (proxy to PatternQuery)
    */
-  offset(count: number): any {
-    return this.query.offset(count);
+  offset(count: number): this {
+    this.query.offset(count);
+    return this;
   }
 
   /**
    * Sort results (proxy to PatternQuery)
    */
-  orderBy(variable: string, field: string, direction: 'asc' | 'desc' = 'asc'): any {
-    return this.query.orderBy(variable, field, direction);
+  orderBy(variable: string, field: string, direction: 'asc' | 'desc' = 'asc'): this {
+    this.query.orderBy(variable, field, direction);
+    return this;
+  }
+
+  /**
+   * Apply property filter to current node
+   */
+  filter(properties: PropertyFilter): this {
+    this.query.addNodeFilter(this.currentVariable, properties);
+    return this;
   }
 
   /**
@@ -87,6 +117,14 @@ export class PatternNodeBuilder<T extends Record<string, any>> {
   count(): number {
     this.query.markAsEnd(this.currentVariable);
     return this.query.count();
+  }
+
+  /**
+   * Check if matches exist (proxy to PatternQuery)
+   */
+  exists(): boolean {
+    this.query.markAsEnd(this.currentVariable);
+    return this.query.exists();
   }
 
   /**

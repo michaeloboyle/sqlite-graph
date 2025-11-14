@@ -263,6 +263,13 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
   }
 
   /**
+   * Check if pattern matches exist
+   */
+  exists(): boolean {
+    return this.count() > 0;
+  }
+
+  /**
    * Show query execution plan without running query
    */
   explain(): QueryPlan {
@@ -295,13 +302,19 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
       );
     }
 
-    // Check that there's at least one edge between start and end
+    // Single-node patterns ARE valid (no edge requirement)
+    // BUT: start and end must reference the SAME variable
     const edgeCount = this.patternSteps.filter((s) => s.type === 'edge').length;
-    if (edgeCount === 0 && !this.isCyclic) {
-      throw new PatternError(
-        'Pattern must have at least one edge traversal using through()',
-        'INVALID_PATTERN'
-      );
+    if (edgeCount === 0) {
+      const startVar = this.patternSteps.find((s) => s.isStart)?.variableName;
+      const endVar = this.patternSteps.find((s) => s.isEnd)?.variableName;
+
+      if (startVar !== endVar) {
+        throw new PatternError(
+          'Pattern must have at least one edge traversal using through()',
+          'INVALID_PATTERN'
+        );
+      }
     }
 
     // Validate selections reference defined variables
@@ -322,6 +335,14 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
    * @private
    */
   private buildSQL(): { sql: string; params: any[] } {
+    const edgeCount = this.patternSteps.filter((s) => s.type === 'edge').length;
+
+    // Single-node pattern (no edges) - use simplified query
+    if (edgeCount === 0) {
+      return this.buildSingleNodeSQL();
+    }
+
+    // Multi-hop pattern - use CTE-based traversal
     const ctes: string[] = [];
     const params: any[] = [];
     let cteIndex = 0;
@@ -428,6 +449,45 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
     const finalSelect = this.buildFinalSelect(params);
 
     const sql = `WITH ${ctes.join(',\n')}\n${finalSelect}`;
+
+    return { sql, params };
+  }
+
+  /**
+   * Build SQL for single-node pattern (no edges)
+   * @private
+   */
+  private buildSingleNodeSQL(): { sql: string; params: any[] } {
+    const startStep = this.patternSteps.find((s) => s.isStart)!;
+    const varName = startStep.variableName!;
+    const filter = this.filters.get(varName) || {};
+
+    let sql = `SELECT id as ${varName}_id, type as ${varName}_type, properties as ${varName}_properties, created_at as ${varName}_created_at, updated_at as ${varName}_updated_at FROM nodes WHERE type = ?`;
+
+    const params = [startStep.nodeType || varName];
+
+    // Add property filters
+    if (Object.keys(filter).length > 0) {
+      const { whereSql, whereParams } = this.buildFilterSQL(filter);
+      sql += ` AND ${whereSql}`;
+      params.push(...whereParams);
+    }
+
+    // Add ORDER BY
+    if (this.orderByClause) {
+      sql += ` ORDER BY json_extract(properties, '$.${this.orderByClause.field}') ${this.orderByClause.direction.toUpperCase()}`;
+    }
+
+    // Add LIMIT/OFFSET (SQLite requires LIMIT if OFFSET is used)
+    if (this.limitValue !== undefined) {
+      sql += ` LIMIT ${this.limitValue}`;
+      if (this.offsetValue !== undefined) {
+        sql += ` OFFSET ${this.offsetValue}`;
+      }
+    } else if (this.offsetValue !== undefined) {
+      // OFFSET without LIMIT - use very large LIMIT
+      sql += ` LIMIT -1 OFFSET ${this.offsetValue}`;
+    }
 
     return { sql, params };
   }
