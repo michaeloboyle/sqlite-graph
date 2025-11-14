@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrowserAdapter Manual Tests</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #007bff;
+      padding-bottom: 10px;
+    }
+
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      color: #155724;
+    }
+
+    .error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+      color: #721c24;
+    }
+
+    .info {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      color: #0c5460;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <h1>BrowserAdapter Manual Tests</h1>
+
+  <div class="test-section">
+    <h2>System Information</h2>
+    <div id="system-info"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+    <button onclick="runBasicTests()">Basic Operations</button>
+    <button onclick="runCrudTests()">CRUD Operations</button>
+    <button onclick="runTransactionTests()">Transactions</button>
+    <button onclick="runGraphTests()">Graph Operations</button>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="passed-count">0</div>
+      <div class="stat-label">Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="failed-count">0</div>
+      <div class="stat-label">Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="total-time">0ms</div>
+      <div class="stat-label">Total Time</div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <!-- Load wa-sqlite (you'll need to serve this from node_modules or CDN) -->
+  <script src="node_modules/@journeyapps/wa-sqlite/dist/wa-sqlite.js"></script>
+
+  <!-- Your adapter (build to ESM first) -->
+  <script type="module">
+    import { BrowserAdapter } from './browser-adapter.js';
+
+    let testsPassed = 0;
+    let testsFailed = 0;
+    let totalTime = 0;
+
+    // Show system info
+    function showSystemInfo() {
+      const info = document.getElementById('system-info');
+      const hasOPFS = typeof navigator?.storage?.getDirectory === 'function';
+
+      info.innerHTML = `
+        <div class="info">
+          <strong>Browser:</strong> ${navigator.userAgent}<br>
+          <strong>OPFS Available:</strong> ${hasOPFS ? '✅ Yes' : '❌ No (will use IndexedDB)'}<br>
+          <strong>IndexedDB Available:</strong> ${window.indexedDB ? '✅ Yes' : '❌ No'}<br>
+          <strong>wa-sqlite Loaded:</strong> ${typeof window.sqlite3InitModule !== 'undefined' ? '✅ Yes' : '❌ No'}
+        </div>
+      `;
+    }
+
+    function log(message, type = 'info') {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `test-result ${type}`;
+      div.textContent = message;
+      results.appendChild(div);
+    }
+
+    function updateStats() {
+      document.getElementById('passed-count').textContent = testsPassed;
+      document.getElementById('failed-count').textContent = testsFailed;
+      document.getElementById('total-time').textContent = totalTime + 'ms';
+    }
+
+    async function runTest(name, testFn) {
+      const start = performance.now();
+      try {
+        await testFn();
+        const duration = Math.round(performance.now() - start);
+        totalTime += duration;
+        testsPassed++;
+        log(`✅ ${name} (${duration}ms)`, 'success');
+        updateStats();
+      } catch (error) {
+        const duration = Math.round(performance.now() - start);
+        totalTime += duration;
+        testsFailed++;
+        log(`❌ ${name}: ${error.message} (${duration}ms)`, 'error');
+        updateStats();
+        throw error; // Re-throw to stop test suite if needed
+      }
+    }
+
+    window.clearResults = function() {
+      document.getElementById('results').innerHTML = '';
+      testsPassed = 0;
+      testsFailed = 0;
+      totalTime = 0;
+      updateStats();
+    };
+
+    window.runBasicTests = async function() {
+      log('=== Basic Operations Tests ===', 'info');
+
+      await runTest('Create database', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        if (!adapter.isOpen()) throw new Error('Database not open');
+        await adapter.close();
+      });
+
+      await runTest('Close database', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.close();
+        if (adapter.isOpen()) throw new Error('Database still open');
+      });
+
+      await runTest('Execute SQL', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)');
+        await adapter.close();
+      });
+
+      await runTest('Prepare statement', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)');
+        const stmt = await adapter.prepare('INSERT INTO test (name) VALUES (?)');
+        if (!stmt || typeof stmt.run !== 'function') {
+          throw new Error('Statement not prepared correctly');
+        }
+        await adapter.close();
+      });
+    };
+
+    window.runCrudTests = async function() {
+      log('=== CRUD Operations Tests ===', 'info');
+
+      await runTest('Insert with lastInsertRowid', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)');
+        const stmt = await adapter.prepare('INSERT INTO users (name, age) VALUES (?, ?)');
+        const result = stmt.run('Alice', 30);
+
+        if (result.changes !== 1) throw new Error('Expected 1 change');
+        if (!result.lastInsertRowid) throw new Error('No lastInsertRowid');
+
+        await adapter.close();
+      });
+
+      await runTest('Select single row', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)');
+        const insertStmt = await adapter.prepare('INSERT INTO users (name) VALUES (?)');
+        insertStmt.run('Bob');
+
+        const selectStmt = await adapter.prepare('SELECT * FROM users WHERE name = ?');
+        const row = selectStmt.get('Bob');
+
+        if (!row || row.name !== 'Bob') throw new Error('Row not found');
+
+        await adapter.close();
+      });
+
+      await runTest('Select multiple rows', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)');
+        const insertStmt = await adapter.prepare('INSERT INTO users (name, age) VALUES (?, ?)');
+        insertStmt.run('Charlie', 25);
+        insertStmt.run('Diana', 30);
+        insertStmt.run('Eve', 35);
+
+        const selectStmt = await adapter.prepare('SELECT * FROM users WHERE age >= ?');
+        const rows = selectStmt.all(30);
+
+        if (rows.length !== 2) throw new Error('Expected 2 rows');
+
+        await adapter.close();
+      });
+
+      await runTest('Update data', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)');
+        const insertStmt = await adapter.prepare('INSERT INTO users (name, age) VALUES (?, ?)');
+        insertStmt.run('Frank', 40);
+
+        const updateStmt = await adapter.prepare('UPDATE users SET age = ? WHERE name = ?');
+        const result = updateStmt.run(41, 'Frank');
+
+        if (result.changes !== 1) throw new Error('Expected 1 change');
+
+        await adapter.close();
+      });
+
+      await runTest('Delete data', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)');
+        const insertStmt = await adapter.prepare('INSERT INTO users (name) VALUES (?)');
+        insertStmt.run('Grace');
+
+        const deleteStmt = await adapter.prepare('DELETE FROM users WHERE name = ?');
+        const result = deleteStmt.run('Grace');
+
+        if (result.changes !== 1) throw new Error('Expected 1 change');
+
+        await adapter.close();
+      });
+    };
+
+    window.runTransactionTests = async function() {
+      log('=== Transaction Tests ===', 'info');
+
+      await runTest('Commit successful transaction', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER)');
+
+        await adapter.transaction(async () => {
+          const stmt = await adapter.prepare('INSERT INTO accounts (balance) VALUES (?)');
+          stmt.run(100);
+          stmt.run(200);
+        });
+
+        const countStmt = await adapter.prepare('SELECT COUNT(*) as count FROM accounts');
+        const row = countStmt.get();
+        if (row.count !== 2) throw new Error('Expected 2 rows');
+
+        await adapter.close();
+      });
+
+      await runTest('Rollback failed transaction', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER)');
+
+        try {
+          await adapter.transaction(async () => {
+            const stmt = await adapter.prepare('INSERT INTO accounts (balance) VALUES (?)');
+            stmt.run(100);
+            throw new Error('Intentional error');
+          });
+        } catch (error) {
+          // Expected
+        }
+
+        const countStmt = await adapter.prepare('SELECT COUNT(*) as count FROM accounts');
+        const row = countStmt.get();
+        if (row.count !== 0) throw new Error('Transaction not rolled back');
+
+        await adapter.close();
+      });
+    };
+
+    window.runGraphTests = async function() {
+      log('=== Graph Operations Tests ===', 'info');
+
+      await runTest('Create nodes with JSON properties', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec(`
+          CREATE TABLE nodes (
+            id INTEGER PRIMARY KEY,
+            type TEXT,
+            properties TEXT
+          )
+        `);
+
+        const properties = { title: 'Engineer', salary: 120000 };
+        const stmt = await adapter.prepare('INSERT INTO nodes (type, properties) VALUES (?, ?)');
+        const result = stmt.run('Job', JSON.stringify(properties));
+
+        const selectStmt = await adapter.prepare('SELECT * FROM nodes WHERE id = ?');
+        const node = selectStmt.get(result.lastInsertRowid);
+
+        if (node.type !== 'Job') throw new Error('Wrong type');
+        if (!node.properties.includes('Engineer')) throw new Error('Missing properties');
+
+        await adapter.close();
+      });
+
+      await runTest('Bulk insert performance (1000 rows)', async () => {
+        const adapter = await BrowserAdapter.create(':memory:');
+        await adapter.exec('CREATE TABLE nodes (id INTEGER PRIMARY KEY, type TEXT)');
+
+        const start = performance.now();
+        await adapter.transaction(async () => {
+          const stmt = await adapter.prepare('INSERT INTO nodes (type) VALUES (?)');
+          for (let i = 0; i < 1000; i++) {
+            stmt.run('TestNode');
+          }
+        });
+        const duration = performance.now() - start;
+
+        const countStmt = await adapter.prepare('SELECT COUNT(*) as count FROM nodes');
+        const row = countStmt.get();
+        if (row.count !== 1000) throw new Error('Expected 1000 rows');
+
+        log(`  → Inserted 1000 rows in ${Math.round(duration)}ms (${adapter.getVFS()} VFS)`, 'info');
+
+        await adapter.close();
+      });
+    };
+
+    window.runAllTests = async function() {
+      clearResults();
+      log('🚀 Starting test suite...', 'info');
+
+      try {
+        await runBasicTests();
+        await runCrudTests();
+        await runTransactionTests();
+        await runGraphTests();
+
+        log(`\n✅ All tests passed! (${testsPassed}/${testsPassed + testsFailed})`, 'success');
+      } catch (error) {
+        log(`\n❌ Test suite failed: ${error.message}`, 'error');
+      }
+    };
+
+    // Initialize on load
+    showSystemInfo();
+    log('Ready to run tests. Click "Run All Tests" to begin.', 'info');
+  </script>
+</body>
+</html>
