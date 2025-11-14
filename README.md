@@ -10,7 +10,9 @@
 
 ## Overview
 
-sqlite-graph is a production-ready graph database library that combines the reliability of SQLite with the expressiveness of a fluent query API. Built with TypeScript and designed for performance, it provides an intuitive way to model and query connected data.
+sqlite-graph is an alpha-stage graph database library that combines the reliability of SQLite with the expressiveness of a fluent query API. Built with TypeScript and designed for performance, it provides an intuitive way to model and query connected data.
+
+**Current Status:** Alpha - core functionality working, but not recommended for production use yet.
 
 **Key Features:**
 - 🚀 **Fluent Query DSL** - Intuitive method chaining for complex graph queries
@@ -69,15 +71,7 @@ const { node, created } = db.mergeNode('Company',
   { industry: 'SaaS', size: 'Large' }  // Properties to set
 );
 
-// Production concurrency (optional)
-import { enableWAL, withRetry, WriteQueue } from 'sqlite-graph';
-
-enableWAL(db); // Better read concurrency
-
-await withRetry(() => db.createNode('Job', { title: 'Engineer' })); // Auto-retry on locks
-
-const writeQueue = new WriteQueue();
-await writeQueue.enqueue(() => db.mergeNode(...)); // Serialize writes
+// Note: Advanced concurrency features planned for future releases
 ```
 
 ## Installation
