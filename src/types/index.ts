@@ -123,3 +123,9 @@ export interface GraphExport {
     exportedAt: string;
   };
 }
+
+// Re-export pattern matching types (Phase 3)
+export * from './pattern';
+
+// Re-export bulk operations types (Phase 3)
+export * from './bulk';

@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { initializeSchema } from './Schema';
 import { NodeQuery } from '../query/NodeQuery';
 import { TraversalQuery } from '../query/TraversalQuery';
+import { PatternQuery } from '../query/PatternQuery';
 import { TransactionContext } from './Transaction';
 import {
   Node,
@@ -444,6 +445,31 @@ export class GraphDatabase {
     }
 
     return new TraversalQuery(this.db, startNodeId);
+  }
+
+  /**
+   * Start a declarative pattern matching query (Phase 3).
+   *
+   * @returns A PatternQuery builder for fluent pattern matching
+   *
+   * @example
+   * ```typescript
+   * // Find jobs posted by companies where friends work
+   * const results = db.pattern()
+   *   .start('person', 'Person')
+   *   .where({ person: { id: userId } })
+   *   .through('KNOWS', 'both')
+   *   .node('friend', 'Person')
+   *   .through('WORKS_AT', 'out')
+   *   .node('company', 'Company')
+   *   .through('POSTED_BY', 'in')
+   *   .end('job', 'Job')
+   *   .select(['job', 'company'])
+   *   .exec();
+   * ```
+   */
+  pattern<T extends Record<string, any> = {}>(): PatternQuery<T> {
+    return new PatternQuery<T>(this.db);
   }
 
   /**
