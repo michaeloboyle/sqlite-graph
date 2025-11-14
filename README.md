@@ -19,7 +19,7 @@ sqlite-graph is an alpha-stage graph database library that combines the reliabil
 - 📊 **Type-Safe** - Full TypeScript support with generic types
 - ⚡ **High Performance** - Optimized indexes and prepared statements
 - 🔄 **ACID Transactions** - Built on SQLite's transaction system
-- 🎯 **Graph Algorithms** - Shortest path, traversal, pattern matching
+- 🎯 **Graph Algorithms** - Shortest path, all paths finding, BFS/DFS traversal
 - 🛠️ **Universal Schema** - Flexible JSON properties for any data model
 - 🔮 **Future WASM Support** - Path to Rust optimization when needed
 
@@ -205,7 +205,7 @@ See [ROADMAP.md](ROADMAP.md) for complete 6-week timeline.
 
 ### Phase 5: Post-v1.0 Polish
 - [ ] Community adoption and feedback
-- [ ] Missing Phase 3 features (all paths, pattern matching)
+- [ ] Missing Phase 3 features (pattern matching, bulk operations)
 - [ ] Documentation and examples
 - [ ] npm ecosystem presence
 
@@ -266,7 +266,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ---
 
-**Status:** 🟡 Alpha - Phase 1-3 Complete | Phase 4 (Browser Support) In Progress
+**Status:** 🟡 Alpha - Phase 1-2 Complete, Phase 3 Partial | Phase 4 (Browser Support) In Progress
 **Current Phase:** Building v1.0 with universal browser support (6-week timeline)
 **Test Status:** 294 tests passing | 2 suites with memory issues | ~75-80% coverage (estimated)
 **Not Production Ready:** Memory crashes in coverage tests, missing npm publish config
