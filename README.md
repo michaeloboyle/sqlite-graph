@@ -174,15 +174,17 @@ See [SPARC-DEVELOPMENT.md](docs/SPARC-DEVELOPMENT.md) for detailed methodology d
 - [x] Path enumeration (paths() wrapper)
 - [x] Integration tests (13 integration tests)
 
-### Phase 3: Advanced Features (Complete ✅)
+### Phase 3: Advanced Features (Partial ✅)
 - [x] Merge operations (mergeNode, mergeEdge)
 - [x] Index management (createPropertyIndex, dropIndex, listIndexes)
 - [x] Merge operation tests (33 tests passing)
 - [x] Merge operation benchmarks
-- [ ] All paths finding
-- [ ] Pattern matching
-- [ ] Bulk operations
+- [x] All paths finding (toPaths, allPaths, paths methods)
+- [ ] Pattern matching (not implemented)
+- [ ] Bulk operations (not implemented)
 - [x] Export/import (implemented in Phase 1)
+
+**Phase 3 Status:** Core features complete, pattern matching and bulk operations deferred to post-v1.0
 
 ### Phase 4: Browser Support (v1.0) 🚀 IN PROGRESS
 **Target:** Late December 2024 / Early January 2025
