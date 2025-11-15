@@ -3,8 +3,6 @@
  * Efficient batch CRUD operations for graph databases
  */
 
-import { NodeData } from './index';
-
 /**
  * Node specification for bulk creation
  */

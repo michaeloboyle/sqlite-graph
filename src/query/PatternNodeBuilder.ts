@@ -4,7 +4,6 @@
  */
 
 import { PropertyFilter, PatternMatch, QueryPlan } from '../types/pattern';
-import type { PatternQuery } from './PatternQuery';
 
 /**
  * Builder for adding constraints to pattern nodes

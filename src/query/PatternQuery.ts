@@ -357,7 +357,7 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
         const filter = this.filters.get(varName);
         const { whereSql, whereParams } = this.buildFilterSQL(filter || {});
 
-        let sql = `${varName}_start AS (
+        const sql = `${varName}_start AS (
           SELECT * FROM nodes
           WHERE type = ?${whereSql ? ` AND ${whereSql}` : ''}
         )`;
@@ -521,7 +521,7 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
     }
 
     const fromClause = this.buildFromClause();
-    let whereClauses: string[] = [];
+    const whereClauses: string[] = [];
 
     // Add cyclic constraint if needed
     if (this.isCyclic && this.cyclicVariable) {
@@ -682,13 +682,14 @@ export class PatternQuery<T extends Record<string, GraphEntity>> {
               conditions.push(`json_extract(properties, '$.${key}') != ?`);
               params.push(val);
               break;
-            case '$in':
+            case '$in': {
               const placeholders = (val as any[]).map(() => '?').join(', ');
               conditions.push(
                 `json_extract(properties, '$.${key}') IN (${placeholders})`
               );
               params.push(...(val as any[]));
               break;
+            }
           }
         }
       } else {

@@ -468,7 +468,7 @@ export class GraphDatabase {
    *   .exec();
    * ```
    */
-  pattern<T extends Record<string, any> = {}>(): PatternQuery<T> {
+  pattern<T extends Record<string, unknown> = Record<string, unknown>>(): PatternQuery<T> {
     return new PatternQuery<T>(this.db);
   }
 
