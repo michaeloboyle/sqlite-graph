@@ -2,7 +2,50 @@
 
 ## Overview
 
-This document describes the performance characteristics of sqlite-graph, including benchmark methodology, results, and hardware specifications.
+This document describes the performance characteristics of sqlite-graph, including benchmark methodology, results, and hardware specifications for both Node.js (better-sqlite3) and browser (wa-sqlite) implementations.
+
+## 🆕 Browser Adapter Benchmarks (November 2024)
+
+**Status:** Node.js baseline complete ✅ | Browser testing ready ⏳
+
+See [experiments/browser-poc/BENCHMARK-SUMMARY.md](../experiments/browser-poc/BENCHMARK-SUMMARY.md) for detailed browser adapter performance analysis.
+
+### Node.js Baseline (Better-sqlite3)
+
+**All operations < 1ms average** ✅
+
+| Operation | Avg Time | Ops/Sec | Category |
+|-----------|----------|---------|----------|
+| Delete Single Row | 0.01ms | 94,341 | Ultra-Fast |
+| Select Single Row | 0.02ms | 59,289 | Ultra-Fast |
+| Single Insert | 0.02ms | 60,000 | Ultra-Fast |
+| Transaction Rollback | 0.03ms | 36,563 | Fast |
+| Graph Traversal (BFS) | 0.05ms | 20,367 | Fast |
+| Update Single Row | 0.05ms | 18,459 | Fast |
+| Batch Insert (100 rows) | 0.12ms | 8,232 | Batch |
+| Select All (1000 rows) | 0.40ms | 2,494 | Batch |
+| Database Creation | 0.54ms | 1,847 | Batch |
+| Transaction (1000 rows) | 0.58ms | 1,713 | Batch |
+
+**Key Characteristics:**
+- Point queries: 0.01-0.05ms (excellent)
+- Bulk operations: 0.12-0.58ms (scales linearly)
+- Graph algorithms: 0.05ms (20k ops/sec)
+- Transaction overhead: Minimal (0.03ms for rollback)
+
+### Browser Performance Targets
+
+| VFS Backend | Target vs Node.js | Expected Performance |
+|-------------|-------------------|---------------------|
+| OPFS | 1.2-1.8x slower | ✅ Excellent |
+| IndexedDB | 1.8-2.5x slower | ✅ Acceptable |
+| Memory | 1.1-1.5x slower | ✅ Best case |
+
+**Testing:** Run `npm run bench` for Node.js baseline, then open `benchmark.html` in browser for comparison.
+
+---
+
+## Original Comprehensive Benchmarks (October 2024)
 
 ## Quick Results
 
