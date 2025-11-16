@@ -1,0 +1,32 @@
+{
+  "pattern_id": "performance-baseline-node",
+  "pattern_type": "performance-benchmark",
+  "description": "Node.js performance baseline for better-sqlite3 adapter",
+  "context": {
+    "platform": "node",
+    "adapter": "better-sqlite3",
+    "hardware": "macOS (Darwin 24.6.0)",
+    "timestamp": "2025-11-14"
+  },
+  "benchmarks": {
+    "database_creation": { "avg_ms": 0.54, "ops_sec": 1847, "category": "batch" },
+    "single_insert": { "avg_ms": 0.02, "ops_sec": 60000, "category": "ultra-fast" },
+    "batch_insert_100": { "avg_ms": 0.12, "ops_sec": 8232, "category": "batch" },
+    "transaction_1000": { "avg_ms": 0.58, "ops_sec": 1713, "category": "batch" },
+    "select_single": { "avg_ms": 0.02, "ops_sec": 59289, "category": "ultra-fast" },
+    "select_all_1000": { "avg_ms": 0.40, "ops_sec": 2494, "category": "batch" },
+    "update_single": { "avg_ms": 0.05, "ops_sec": 18459, "category": "fast" },
+    "delete_single": { "avg_ms": 0.01, "ops_sec": 94341, "category": "ultra-fast" },
+    "graph_traversal_bfs": { "avg_ms": 0.05, "ops_sec": 20367, "category": "fast" },
+    "transaction_rollback": { "avg_ms": 0.03, "ops_sec": 36563, "category": "fast" }
+  },
+  "summary": {
+    "all_operations_under_1ms": true,
+    "fastest_operation": "delete_single",
+    "slowest_operation": "transaction_1000",
+    "average_point_query_ms": 0.025,
+    "average_bulk_operation_ms": 0.41
+  },
+  "created_at": "2025-11-14T00:00:00Z",
+  "confidence": 1.0
+}

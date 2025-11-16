@@ -1,0 +1,46 @@
+{
+  "pattern_id": "browser-testing-sqlite-graph",
+  "pattern_type": "browser-validation",
+  "description": "Cross-browser testing for wa-sqlite adapter with OPFS/IndexedDB validation",
+  "context": {
+    "baseline": {
+      "node_js": {
+        "delete_single": { "time_ms": 0.01, "ops_sec": 94341 },
+        "select_single": { "time_ms": 0.02, "ops_sec": 59289 },
+        "insert_single": { "time_ms": 0.02, "ops_sec": 60000 },
+        "transaction_1000": { "time_ms": 0.58, "ops_sec": 1713 },
+        "graph_traversal": { "time_ms": 0.05, "ops_sec": 20367 }
+      }
+    },
+    "browsers": ["chrome", "firefox", "safari"],
+    "vfs_backends": ["OPFS", "IndexedDB", "Memory"],
+    "test_suite": "test.html",
+    "benchmark_suite": "benchmark.html"
+  },
+  "expectations": {
+    "opfs_ratio": { "min": 1.2, "max": 1.8, "target": 1.5 },
+    "indexeddb_ratio": { "min": 1.8, "max": 2.5, "target": 2.0 },
+    "memory_ratio": { "min": 1.1, "max": 1.5, "target": 1.3 }
+  },
+  "execution_history": [],
+  "learned_patterns": {
+    "opfs_availability": {
+      "chrome": { "available": true, "version_min": 102 },
+      "firefox": { "available": true, "version_min": 111 },
+      "safari": { "available": true, "version_min": 15.2 }
+    },
+    "common_issues": [
+      "OPFS not available in incognito mode",
+      "IndexedDB quota limits in Safari",
+      "WASM initialization delay on first load"
+    ],
+    "optimizations": [
+      "Pre-warm WASM module before tests",
+      "Use SharedArrayBuffer for better performance",
+      "Cache OPFS handles for reuse"
+    ]
+  },
+  "created_at": "2025-11-14T00:00:00Z",
+  "updated_at": "2025-11-14T00:00:00Z",
+  "confidence": 0.85
+}

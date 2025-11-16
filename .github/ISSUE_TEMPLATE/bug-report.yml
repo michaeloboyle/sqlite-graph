@@ -1,0 +1,100 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        **AgentDB will analyze this issue** and suggest similar resolutions from history.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear description of the bug
+      placeholder: What happened vs what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+      placeholder: |
+        1. Create database with ...
+        2. Run query ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: Minimal code that reproduces the issue
+      render: typescript
+      placeholder: |
+        const db = await GraphDatabase.create(':memory:');
+        // ... code that triggers bug
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does this occur?
+      options:
+        - Node.js (better-sqlite3)
+        - Browser (wa-sqlite)
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: sqlite-graph Version
+      description: npm package version
+      placeholder: "0.3.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-log
+    attributes:
+      label: Error Log
+      description: Full error message or stack trace
+      render: shell
+      placeholder: |
+        Error: ...
+        at ...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I've searched for similar issues
+          required: true
+        - label: I've included a minimal reproducible example
+          required: true
+        - label: I've checked the documentation
+          required: true

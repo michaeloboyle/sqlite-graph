@@ -1,0 +1,87 @@
+name: Browser Testing Task
+description: Manual or automated browser testing for wa-sqlite adapter
+title: "[Browser Testing] "
+labels: ["browser-support", "testing", "skill-ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Browser Testing Checklist
+        Use this template to track browser testing progress across Chrome, Firefox, and Safari.
+
+        **AgentDB Skill:** This issue can be automated with `agentdb-browser-test` skill
+
+  - type: checkboxes
+    id: browsers
+    attributes:
+      label: Browsers to Test
+      description: Select browsers for testing
+      options:
+        - label: Chrome (latest)
+        - label: Firefox (latest)
+        - label: Safari (latest)
+
+  - type: checkboxes
+    id: vfs-backends
+    attributes:
+      label: VFS Backends
+      description: Test each VFS backend
+      options:
+        - label: OPFS (Origin Private File System)
+        - label: IndexedDB (Fallback)
+        - label: Memory (In-memory, no persistence)
+
+  - type: checkboxes
+    id: test-suite
+    attributes:
+      label: Test Suite (test.html)
+      description: Functional tests from NodeAdapter (19 total)
+      options:
+        - label: All 19 tests pass
+        - label: OPFS detection works
+        - label: IndexedDB fallback works
+        - label: Persistence validated (data survives page reload)
+
+  - type: checkboxes
+    id: benchmarks
+    attributes:
+      label: Performance Benchmarks (benchmark.html)
+      description: Compare with Node.js baseline
+      options:
+        - label: All operations complete successfully
+        - label: Performance within 2.5x Node.js baseline
+        - label: OPFS: 1.2-1.8x slower (target)
+        - label: IndexedDB: 1.8-2.5x slower (acceptable)
+
+  - type: textarea
+    id: results
+    attributes:
+      label: Test Results
+      description: Paste results from browser console or attach screenshots
+      placeholder: |
+        Example:
+        Chrome + OPFS: 19/19 tests pass, performance 1.6x slower ✅
+        Firefox + OPFS: 19/19 tests pass, performance 1.7x slower ✅
+        Safari + OPFS: 19/19 tests pass, performance 1.8x slower ✅
+
+  - type: dropdown
+    id: automation
+    attributes:
+      label: Testing Method
+      description: Manual or automated testing?
+      options:
+        - Manual (open test.html in browsers)
+        - Automated (Playwright via agentdb-browser-test skill)
+        - Both (manual validation after automated run)
+    default: 1
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any issues, anomalies, or observations
+      placeholder: |
+        Example:
+        - Safari OPFS faster than expected (1.8x vs 2.0x predicted)
+        - OPFS not available in Firefox incognito mode
+        - IndexedDB quota warning in Safari after 50MB

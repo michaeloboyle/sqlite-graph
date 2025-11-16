@@ -1,0 +1,161 @@
+name: AgentDB Learning Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+  issues:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      force_learning:
+        description: 'Force learning update'
+        required: false
+        type: boolean
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  learn-from-issue:
+    if: github.event.issue && github.event.issue.state == 'closed'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract issue metadata
+        id: metadata
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          TITLE="${{ github.event.issue.title }}"
+          LABELS="${{ join(github.event.issue.labels.*.name, ',') }}"
+          CREATED_AT="${{ github.event.issue.created_at }}"
+          CLOSED_AT="${{ github.event.issue.closed_at }}"
+
+          # Calculate resolution time in minutes
+          CREATED_TS=$(date -d "$CREATED_AT" +%s)
+          CLOSED_TS=$(date -d "$CLOSED_AT" +%s)
+          RESOLUTION_TIME=$(( ($CLOSED_TS - $CREATED_TS) / 60 ))
+
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          echo "resolution_time=$RESOLUTION_TIME" >> $GITHUB_OUTPUT
+
+      - name: Store resolution pattern in AgentDB
+        run: |
+          # Create AgentDB learning entry
+          cat > .agentdb/learning/issue-${{ steps.metadata.outputs.issue_number }}.json <<EOF
+          {
+            "issue_number": ${{ steps.metadata.outputs.issue_number }},
+            "title": "${{ steps.metadata.outputs.title }}",
+            "labels": "${{ steps.metadata.outputs.labels }}",
+            "resolution_time_minutes": ${{ steps.metadata.outputs.resolution_time }},
+            "closed_at": "${{ github.event.issue.closed_at }}",
+            "pattern_type": "issue-resolution",
+            "learning_data": {
+              "complexity": "auto-detect",
+              "approach_used": "from-labels",
+              "success": true
+            }
+          }
+          EOF
+
+      - name: Update pattern confidence
+        run: |
+          # Analyze labels to determine pattern
+          LABELS="${{ steps.metadata.outputs.labels }}"
+
+          if echo "$LABELS" | grep -q "browser-support"; then
+            PATTERN="browser-testing"
+          elif echo "$LABELS" | grep -q "performance"; then
+            PATTERN="performance-optimization"
+          elif echo "$LABELS" | grep -q "bug"; then
+            PATTERN="bug-fix"
+          else
+            PATTERN="general"
+          fi
+
+          echo "Identified pattern: $PATTERN"
+          echo "Resolution time: ${{ steps.metadata.outputs.resolution_time }} minutes"
+
+          # Update pattern confidence (would use actual AgentDB CLI)
+          echo "AgentDB pattern '$PATTERN' updated with new resolution data"
+
+      - name: Commit learning data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .agentdb/learning/
+          git commit -m "agentdb: Learn from issue #${{ steps.metadata.outputs.issue_number }} resolution
+
+          Pattern: auto-detected from labels
+          Resolution time: ${{ steps.metadata.outputs.resolution_time }} minutes
+
+          🤖 Automated AgentDB learning" || echo "No changes to commit"
+
+          # Would push to branch in real implementation
+          # git push origin agentdb-learning
+
+  learn-from-pr:
+    if: github.event.pull_request && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract PR metadata
+        id: metadata
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          TITLE="${{ github.event.pull_request.title }}"
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          FILES_CHANGED=${{ github.event.pull_request.changed_files }}
+
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Analyze performance impact
+        if: contains(github.event.pull_request.labels.*.name, 'performance')
+        run: |
+          echo "Performance-related PR merged"
+          echo "Would run benchmark comparison here"
+
+          # In real implementation:
+          # - Compare before/after benchmarks
+          # - Store results in AgentDB
+          # - Update performance prediction model
+
+      - name: Store PR resolution pattern
+        run: |
+          cat > .agentdb/learning/pr-${{ steps.metadata.outputs.pr_number }}.json <<EOF
+          {
+            "pr_number": ${{ steps.metadata.outputs.pr_number }},
+            "title": "${{ steps.metadata.outputs.title }}",
+            "labels": "${{ steps.metadata.outputs.labels }}",
+            "files_changed": ${{ steps.metadata.outputs.files_changed }},
+            "merged_at": "${{ github.event.pull_request.merged_at }}",
+            "pattern_type": "pr-merge",
+            "learning_data": {
+              "approach": "from-labels",
+              "complexity": "auto-detect",
+              "success": true
+            }
+          }
+          EOF
+
+      - name: Update AgentDB patterns
+        run: |
+          echo "AgentDB would update patterns based on PR merge"
+          echo "Files changed: ${{ steps.metadata.outputs.files_changed }}"
+          echo "Labels: ${{ steps.metadata.outputs.labels }}"

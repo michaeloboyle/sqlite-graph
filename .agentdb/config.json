@@ -1,0 +1,40 @@
+{
+  "project": "sqlite-graph",
+  "version": "1.0.0",
+  "agentdb": {
+    "enabled": true,
+    "auto_learning": true,
+    "memory_retention_days": 90,
+    "similarity_threshold": 0.75,
+    "patterns": [
+      "browser-testing",
+      "async-migration",
+      "performance-optimization",
+      "ci-cd-setup",
+      "pattern-matching-impl",
+      "test-debugging"
+    ]
+  },
+  "learning": {
+    "enabled": true,
+    "confidence_threshold": 0.7,
+    "min_samples": 3,
+    "learning_rate": 0.1
+  },
+  "integration": {
+    "github": {
+      "enabled": true,
+      "auto_label": true,
+      "auto_assign": false
+    },
+    "sparc": {
+      "enabled": true,
+      "memory_guided": true,
+      "optimization_enabled": true
+    },
+    "claude_skills": {
+      "enabled": true,
+      "agentdb_context": true
+    }
+  }
+}
