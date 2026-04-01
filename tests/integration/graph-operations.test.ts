@@ -133,7 +133,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
           founded: 2000 + i,
           revenue: 1000000 * (i + 1)
         })
-      );
+      ));
 
       const jobs = await Promise.all(Array.from({ length: 30 }, async (_, i) => await db.createNode('Job', {
           title: `Job ${i}`,
@@ -141,7 +141,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
           remote: i % 2 === 0,
           department: ['Engineering', 'Sales', 'Marketing'][i % 3]
         })
-      );
+      ));
 
       // Link jobs to companies
       await Promise.all(jobs.map(async (job, i) => {

@@ -267,7 +267,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     it('should calculate skill match percentage for jobs', async () => {
       // My skills
       const mySkills = ['TypeScript', 'React', 'Node.js', 'PostgreSQL'];
-      const skillNodes = await Promise.all(mySkills.mapmap(async name => await db.createNode('Skill', { name, owned: true })
+      const skillNodes = await Promise.all(mySkills.map(async name => await db.createNode('Skill', { name, owned: true })
       ));
 
       // Job requirements
@@ -310,7 +310,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
         'Senior Backend Engineer'
       ];
 
-      const jobs = await Promise.all(jobTitles.mapmap(async title => await db.createNode('Job', {
+      const jobs = await Promise.all(jobTitles.map(async title => await db.createNode('Job', {
           title,
           status: 'active',
           postedAt: new Date().toISOString()
@@ -572,12 +572,12 @@ describe('Job Application Pipeline - Integration Tests', async () => {
           name: `Company ${i}`,
           size: i % 3 === 0 ? 'large' : i % 3 === 1 ? 'medium' : 'small'
         })
-      );
+      ));
 
       // Create skills
-      const skills = ['TypeScript', 'React', 'Node.js', 'Python', 'Go', 'Rust', 'Java', 'C++'].map(
+      const skills = await Promise.all(['TypeScript', 'React', 'Node.js', 'Python', 'Go', 'Rust', 'Java', 'C++'].map(
         async name => await db.createNode('Skill', { name })
-      );
+      ));
 
       // Create 100 jobs
       const jobs = await Promise.all(Array.from({ length: 100 }, async (_, i) => await db.createNode('Job', {
@@ -586,7 +586,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
           salary: { min: 100000 + i * 1000, max: 150000 + i * 1000 },
           remote: i % 2 === 0
         })
-      );
+      ));
 
       // Create relationships
       await Promise.all(jobs.map(async (job, i) => {
