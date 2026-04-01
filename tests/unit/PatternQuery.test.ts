@@ -8,15 +8,15 @@ import { GraphDatabase } from '../../src/core/Database';
 import { PatternQuery } from '../../src/query/PatternQuery';
 import { PatternError } from '../../src/types/pattern';
 
-describe('PatternQuery', () => {
+describe('PatternQuery', async () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
     db = new GraphDatabase(':memory:');
   });
 
-  afterEach(() => {
-    db.close();
+  afterEach(async () => {
+    await db.close();
   });
 
   describe('Pattern Builder - Basic Structure', () => {
@@ -65,12 +65,12 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Simple 2-Hop Pattern', () => {
-    beforeEach(() => {
+  describe('Simple 2-Hop Pattern', async () => {
+    beforeEach(async () => {
       // Create test data: Person -> WORKS_AT -> Company
-      const person = db.createNode('Person', { name: 'Alice', age: 30 });
-      const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge(person.id, 'WORKS_AT', company.id);
+      const person = await db.createNode('Person', { name: 'Alice', age: 30 });
+      const company = await db.createNode('Company', { name: 'TechCorp' });
+      await db.createEdge(person.id, 'WORKS_AT', company.id);
     });
 
     it('should find person connected to company via WORKS_AT', () => {
@@ -110,11 +110,11 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Direction Handling', () => {
-    beforeEach(() => {
-      const job = db.createNode('Job', { title: 'Engineer' });
-      const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge(job.id, 'POSTED_BY', company.id);
+  describe('Direction Handling', async () => {
+    beforeEach(async () => {
+      const job = await db.createNode('Job', { title: 'Engineer' });
+      const company = await db.createNode('Company', { name: 'TechCorp' });
+      await db.createEdge(job.id, 'POSTED_BY', company.id);
     });
 
     it('should traverse edges in "out" direction', () => {
@@ -139,10 +139,10 @@ describe('PatternQuery', () => {
       expect(results[0].job.properties.title).toBe('Engineer');
     });
 
-    it('should traverse edges in "both" directions', () => {
-      const person1 = db.createNode('Person', { name: 'Alice' });
-      const person2 = db.createNode('Person', { name: 'Bob' });
-      db.createEdge(person1.id, 'KNOWS', person2.id);
+    it('should traverse edges in "both" directions', async () => {
+      const person1 = await db.createNode('Person', { name: 'Alice' });
+      const person2 = await db.createNode('Person', { name: 'Bob' });
+      await db.createEdge(person1.id, 'KNOWS', person2.id);
 
       const results = db.pattern()
         .start('person', 'Person')
@@ -156,11 +156,11 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Filtering with where()', () => {
-    beforeEach(() => {
-      db.createNode('Person', { name: 'Alice', age: 25 });
-      db.createNode('Person', { name: 'Bob', age: 35 });
-      db.createNode('Person', { name: 'Charlie', age: 45 });
+  describe('Filtering with where()', async () => {
+    beforeEach(async () => {
+      await db.createNode('Person', { name: 'Alice', age: 25 });
+      await db.createNode('Person', { name: 'Bob', age: 35 });
+      await db.createNode('Person', { name: 'Charlie', age: 45 });
     });
 
     it('should filter with exact match', () => {
@@ -213,11 +213,11 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Variable Selection with select()', () => {
-    beforeEach(() => {
-      const person = db.createNode('Person', { name: 'Alice' });
-      const company = db.createNode('Company', { name: 'TechCorp' });
-      db.createEdge(person.id, 'WORKS_AT', company.id);
+  describe('Variable Selection with select()', async () => {
+    beforeEach(async () => {
+      const person = await db.createNode('Person', { name: 'Alice' });
+      const company = await db.createNode('Company', { name: 'TechCorp' });
+      await db.createEdge(person.id, 'WORKS_AT', company.id);
     });
 
     it('should return all variables when select() not called', () => {
@@ -246,10 +246,10 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Pagination and Ordering', () => {
-    beforeEach(() => {
+  describe('Pagination and Ordering', async () => {
+    beforeEach(async () => {
       for (let i = 1; i <= 10; i++) {
-        db.createNode('Person', { name: `Person${i}`, age: 20 + i });
+        await db.createNode('Person', { name: `Person${i}`, age: 20 + i });
       }
     });
 
@@ -291,10 +291,10 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Helper Methods', () => {
-    beforeEach(() => {
-      db.createNode('Person', { name: 'Alice' });
-      db.createNode('Person', { name: 'Bob' });
+  describe('Helper Methods', async () => {
+    beforeEach(async () => {
+      await db.createNode('Person', { name: 'Alice' });
+      await db.createNode('Person', { name: 'Bob' });
     });
 
     it('should support first() to return single result', () => {
@@ -333,15 +333,15 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Multi-Hop Patterns', () => {
-    beforeEach(() => {
+  describe('Multi-Hop Patterns', async () => {
+    beforeEach(async () => {
       // Create: Person -> KNOWS -> Friend -> WORKS_AT -> Company
-      const person = db.createNode('Person', { name: 'Alice' });
-      const friend = db.createNode('Person', { name: 'Bob' });
-      const company = db.createNode('Company', { name: 'TechCorp' });
+      const person = await db.createNode('Person', { name: 'Alice' });
+      const friend = await db.createNode('Person', { name: 'Bob' });
+      const company = await db.createNode('Company', { name: 'TechCorp' });
 
-      db.createEdge(person.id, 'KNOWS', friend.id);
-      db.createEdge(friend.id, 'WORKS_AT', company.id);
+      await db.createEdge(person.id, 'KNOWS', friend.id);
+      await db.createEdge(friend.id, 'WORKS_AT', company.id);
     });
 
     it('should handle 3-hop pattern', () => {
@@ -362,14 +362,14 @@ describe('PatternQuery', () => {
     });
   });
 
-  describe('Cyclic Patterns', () => {
-    it('should detect mutual relationships', () => {
-      const alice = db.createNode('Person', { name: 'Alice' });
-      const bob = db.createNode('Person', { name: 'Bob' });
+  describe('Cyclic Patterns', async () => {
+    it('should detect mutual relationships', async () => {
+      const alice = await db.createNode('Person', { name: 'Alice' });
+      const bob = await db.createNode('Person', { name: 'Bob' });
 
       // Mutual recommendations
-      db.createEdge(alice.id, 'RECOMMENDS', bob.id);
-      db.createEdge(bob.id, 'RECOMMENDS', alice.id);
+      await db.createEdge(alice.id, 'RECOMMENDS', bob.id);
+      await db.createEdge(bob.id, 'RECOMMENDS', alice.id);
 
       const results = db.pattern()
         .start('personA', 'Person')

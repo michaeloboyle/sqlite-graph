@@ -1,41 +1,41 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { GraphDatabase } from '../../src/core/Database';
 
-describe('TraversalQuery - paths() wrapper', () => {
+describe('TraversalQuery - paths() wrapper', async () => {
   let db: GraphDatabase;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     db = new GraphDatabase(':memory:');
 
     // Create a simple graph:
     // A -> B -> C
     // A -> D -> C
     // A -> E
-    const a = db.createNode('Node', { name: 'A' });
-    const b = db.createNode('Node', { name: 'B' });
-    const c = db.createNode('Node', { name: 'C' });
-    const d = db.createNode('Node', { name: 'D' });
-    const e = db.createNode('Node', { name: 'E' });
+    const a = await db.createNode('Node', { name: 'A' });
+    const b = await db.createNode('Node', { name: 'B' });
+    const c = await db.createNode('Node', { name: 'C' });
+    const d = await db.createNode('Node', { name: 'D' });
+    const e = await db.createNode('Node', { name: 'E' });
 
-    db.createEdge(a.id, 'LINKS', b.id);
-    db.createEdge(b.id, 'LINKS', c.id);
-    db.createEdge(a.id, 'LINKS', d.id);
-    db.createEdge(d.id, 'LINKS', c.id);
-    db.createEdge(a.id, 'LINKS', e.id);
+    await db.createEdge(a.id, 'LINKS', b.id);
+    await db.createEdge(b.id, 'LINKS', c.id);
+    await db.createEdge(a.id, 'LINKS', d.id);
+    await db.createEdge(d.id, 'LINKS', c.id);
+    await db.createEdge(a.id, 'LINKS', e.id);
 
     // Store node IDs for tests
     (db as any).testNodeIds = { a: a.id, b: b.id, c: c.id, d: d.id, e: e.id };
   });
 
-  afterEach(() => {
-    db.close();
+  afterEach(async () => {
+    await db.close();
   });
 
-  it('should return all paths to target node without options', () => {
+  it('should return all paths to target node without options', async () => {
     const ids = (db as any).testNodeIds;
 
     // Find all paths from A to C
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c);
 
@@ -54,11 +54,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     });
   });
 
-  it('should limit maxPaths when option provided', () => {
+  it('should limit maxPaths when option provided', async () => {
     const ids = (db as any).testNodeIds;
 
     // Limit to 1 path
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c, { maxPaths: 1 });
 
@@ -66,33 +66,33 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(paths[0][paths[0].length - 1].id).toBe(ids.c);
   });
 
-  it('should respect maxDepth option', () => {
+  it('should respect maxDepth option', async () => {
     const ids = (db as any).testNodeIds;
 
     // With maxDepth 1, should not find C (requires 2 hops)
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c, { maxDepth: 1 });
 
     expect(paths.length).toBe(0);
 
     // With maxDepth 2, should find both paths to C
-    const paths2 = db.traverse(ids.a)
+    const paths2 = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c, { maxDepth: 2 });
 
     expect(paths2.length).toBe(2);
   });
 
-  it('should use toPaths() when no maxPaths specified', () => {
+  it('should use toPaths() when no maxPaths specified', async () => {
     const ids = (db as any).testNodeIds;
 
     // paths() without options should behave like toPaths()
-    const pathsResult = db.traverse(ids.a)
+    const pathsResult = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c);
 
-    const toPathsResult = db.traverse(ids.a)
+    const toPathsResult = await db.traverse(ids.a)
       .out('LINKS')
       .toPaths();
 
@@ -105,15 +105,15 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(pathsResult.length).toBe(toPathsFiltered.length);
   });
 
-  it('should use allPaths() when maxPaths is specified', () => {
+  it('should use allPaths() when maxPaths is specified', async () => {
     const ids = (db as any).testNodeIds;
 
     // paths() with maxPaths should behave like allPaths()
-    const pathsResult = db.traverse(ids.a)
+    const pathsResult = await db.traverse(ids.a)
       .out('LINKS')
       .paths(ids.c, { maxPaths: 5 });
 
-    const allPathsResult = db.traverse(ids.a)
+    const allPathsResult = await db.traverse(ids.a)
       .out('LINKS')
       .allPaths(ids.c, 5);
 
@@ -121,11 +121,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(pathsResult.length).toBe(allPathsResult.length);
   });
 
-  it('should apply maxDepth before finding paths', () => {
+  it('should apply maxDepth before finding paths', async () => {
     const ids = (db as any).testNodeIds;
 
     // Set maxDepth on traversal, then call paths()
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .maxDepth(1)
       .paths(ids.c);
@@ -134,11 +134,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(paths.length).toBe(0);
   });
 
-  it('should override traversal maxDepth with options.maxDepth', () => {
+  it('should override traversal maxDepth with options.maxDepth', async () => {
     const ids = (db as any).testNodeIds;
 
     // Set maxDepth on traversal to 1, but override with options.maxDepth 2
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .maxDepth(1)
       .paths(ids.c, { maxDepth: 2 });
@@ -147,29 +147,29 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(paths.length).toBe(2);
   });
 
-  it('should return empty array when no paths exist', () => {
+  it('should return empty array when no paths exist', async () => {
     const ids = (db as any).testNodeIds;
 
     // Create disconnected node
-    const isolated = db.createNode('Node', { name: 'Isolated' });
+    const isolated = await db.createNode('Node', { name: 'Isolated' });
 
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .paths(isolated.id);
 
     expect(paths).toEqual([]);
   });
 
-  it('should work with different edge types', () => {
+  it('should work with different edge types', async () => {
     // Create new graph with different edge types
-    const x = db.createNode('Node', { name: 'X' });
-    const y = db.createNode('Node', { name: 'Y' });
-    const z = db.createNode('Node', { name: 'Z' });
+    const x = await db.createNode('Node', { name: 'X' });
+    const y = await db.createNode('Node', { name: 'Y' });
+    const z = await db.createNode('Node', { name: 'Z' });
 
-    db.createEdge(x.id, 'TYPE_A', y.id);
-    db.createEdge(y.id, 'TYPE_A', z.id);
+    await db.createEdge(x.id, 'TYPE_A', y.id);
+    await db.createEdge(y.id, 'TYPE_A', z.id);
 
-    const paths = db.traverse(x.id)
+    const paths = await db.traverse(x.id)
       .out('TYPE_A')
       .paths(z.id);
 
@@ -177,11 +177,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(paths[0][paths[0].length - 1].id).toBe(z.id);
   });
 
-  it('should handle self-referencing paths', () => {
-    const self = db.createNode('Node', { name: 'Self' });
-    db.createEdge(self.id, 'LINKS', self.id);
+  it('should handle self-referencing paths', async () => {
+    const self = await db.createNode('Node', { name: 'Self' });
+    await db.createEdge(self.id, 'LINKS', self.id);
 
-    const paths = db.traverse(self.id)
+    const paths = await db.traverse(self.id)
       .out('LINKS')
       .paths(self.id);
 
@@ -190,11 +190,11 @@ describe('TraversalQuery - paths() wrapper', () => {
     expect(paths.length).toBe(0);
   });
 
-  it('should combine with other traversal methods', () => {
+  it('should combine with other traversal methods', async () => {
     const ids = (db as any).testNodeIds;
 
     // Use filter before paths()
-    const paths = db.traverse(ids.a)
+    const paths = await db.traverse(ids.a)
       .out('LINKS')
       .filter(node => node.properties.name !== 'E')
       .paths(ids.c);

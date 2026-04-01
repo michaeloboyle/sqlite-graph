@@ -2,18 +2,18 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { GraphDatabase } from '../../src/core/Database';
 import { Node } from '../../src/types';
 
-describe('NodeQuery', () => {
+describe('NodeQuery', async () => {
   let db: GraphDatabase;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     db = new GraphDatabase(':memory:');
 
     // Seed test data
-    const company1 = db.createNode('Company', { name: 'TechCorp', industry: 'SaaS', size: 1000 });
-    const company2 = db.createNode('Company', { name: 'DataCo', industry: 'Analytics', size: 500 });
-    const company3 = db.createNode('Company', { name: 'CloudBase', industry: 'SaaS', size: 2000 });
+    const company1 = await db.createNode('Company', { name: 'TechCorp', industry: 'SaaS', size: 1000 });
+    const company2 = await db.createNode('Company', { name: 'DataCo', industry: 'Analytics', size: 500 });
+    const company3 = await db.createNode('Company', { name: 'CloudBase', industry: 'SaaS', size: 2000 });
 
-    const job1 = db.createNode('Job', {
+    const job1 = await db.createNode('Job', {
       title: 'Senior Engineer',
       status: 'active',
       remote: true,
@@ -21,7 +21,7 @@ describe('NodeQuery', () => {
       posted: '2025-01-15'
     });
 
-    const job2 = db.createNode('Job', {
+    const job2 = await db.createNode('Job', {
       title: 'Junior Developer',
       status: 'closed',
       remote: false,
@@ -29,7 +29,7 @@ describe('NodeQuery', () => {
       posted: '2025-01-10'
     });
 
-    const job3 = db.createNode('Job', {
+    const job3 = await db.createNode('Job', {
       title: 'Staff Engineer',
       status: 'active',
       remote: true,
@@ -37,7 +37,7 @@ describe('NodeQuery', () => {
       posted: '2025-01-20'
     });
 
-    const job4 = db.createNode('Job', {
+    const job4 = await db.createNode('Job', {
       title: 'Lead Developer',
       status: 'active',
       remote: false,
@@ -45,28 +45,28 @@ describe('NodeQuery', () => {
       posted: '2025-01-12'
     });
 
-    const skill1 = db.createNode('Skill', { name: 'TypeScript', level: 'expert' });
-    const skill2 = db.createNode('Skill', { name: 'Python', level: 'intermediate' });
-    const skill3 = db.createNode('Skill', { name: 'React', level: 'advanced' });
+    const skill1 = await db.createNode('Skill', { name: 'TypeScript', level: 'expert' });
+    const skill2 = await db.createNode('Skill', { name: 'Python', level: 'intermediate' });
+    const skill3 = await db.createNode('Skill', { name: 'React', level: 'advanced' });
 
     // Create relationships
-    db.createEdge(job1.id, 'POSTED_BY', company1.id);
-    db.createEdge(job2.id, 'POSTED_BY', company2.id);
-    db.createEdge(job3.id, 'POSTED_BY', company3.id);
-    db.createEdge(job4.id, 'POSTED_BY', company1.id);
+    await db.createEdge(job1.id, 'POSTED_BY', company1.id);
+    await db.createEdge(job2.id, 'POSTED_BY', company2.id);
+    await db.createEdge(job3.id, 'POSTED_BY', company3.id);
+    await db.createEdge(job4.id, 'POSTED_BY', company1.id);
 
-    db.createEdge(job1.id, 'REQUIRES', skill1.id);
-    db.createEdge(job1.id, 'REQUIRES', skill3.id);
-    db.createEdge(job3.id, 'REQUIRES', skill1.id);
-    db.createEdge(job3.id, 'REQUIRES', skill2.id);
+    await db.createEdge(job1.id, 'REQUIRES', skill1.id);
+    await db.createEdge(job1.id, 'REQUIRES', skill3.id);
+    await db.createEdge(job3.id, 'REQUIRES', skill1.id);
+    await db.createEdge(job3.id, 'REQUIRES', skill2.id);
   });
 
-  afterEach(() => {
-    db.close();
+  afterEach(async () => {
+    await db.close();
   });
 
-  describe('Fluent API method chaining', () => {
-    it('should return query instance for chaining where()', () => {
+  describe('Fluent API method chaining', async () => {
+    it('should return query instance for chaining where()', async () => {
       const query = db.nodes('Job')
         .where({ status: 'active' })
         .where({ remote: true });
@@ -75,7 +75,7 @@ describe('NodeQuery', () => {
       expect(typeof query.exec).toBe('function');
     });
 
-    it('should return query instance for chaining connectedTo()', () => {
+    it('should return query instance for chaining connectedTo()', async () => {
       const query = db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY')
         .connectedTo('Skill', 'REQUIRES');
@@ -84,28 +84,28 @@ describe('NodeQuery', () => {
       expect(typeof query.exec).toBe('function');
     });
 
-    it('should return query instance for chaining orderBy()', () => {
+    it('should return query instance for chaining orderBy()', async () => {
       const query = db.nodes('Job').orderBy('salary', 'desc');
 
       expect(query).toBeDefined();
       expect(typeof query.exec).toBe('function');
     });
 
-    it('should return query instance for chaining limit()', () => {
+    it('should return query instance for chaining limit()', async () => {
       const query = db.nodes('Job').limit(10);
 
       expect(query).toBeDefined();
       expect(typeof query.exec).toBe('function');
     });
 
-    it('should return query instance for chaining offset()', () => {
+    it('should return query instance for chaining offset()', async () => {
       const query = db.nodes('Job').offset(5);
 
       expect(query).toBeDefined();
       expect(typeof query.exec).toBe('function');
     });
 
-    it('should allow complex method chaining', () => {
+    it('should allow complex method chaining', async () => {
       const query = db.nodes('Job')
         .where({ status: 'active' })
         .connectedTo('Company', 'POSTED_BY')
@@ -114,14 +114,14 @@ describe('NodeQuery', () => {
         .offset(0);
 
       expect(query).toBeDefined();
-      const results = query.exec();
+      const results = await query.exec();
       expect(Array.isArray(results)).toBe(true);
     });
   });
 
-  describe('where() filtering', () => {
-    it('should filter nodes by single property', () => {
-      const results = db.nodes('Job')
+  describe('where() filtering', async () => {
+    it('should filter nodes by single property', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .exec();
 
@@ -131,9 +131,9 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should filter nodes by multiple properties (AND logic)', () => {
+    it('should filter nodes by multiple properties (AND logic)', async () => {
       // Boolean values need special handling in SQLite - use filter() for complex types
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .filter(node => node.properties.remote === true)
         .exec();
@@ -145,8 +145,8 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should support chained where() calls (AND logic)', () => {
-      const results = db.nodes('Job')
+    it('should support chained where() calls (AND logic)', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .where({ salary: 150000 })
         .exec();
@@ -158,8 +158,8 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should filter by numeric properties', () => {
-      const results = db.nodes('Job')
+    it('should filter by numeric properties', async () => {
+      const results = await db.nodes('Job')
         .where({ salary: 150000 })
         .exec();
 
@@ -167,30 +167,30 @@ describe('NodeQuery', () => {
       expect(results[0].properties.title).toBe('Senior Engineer');
     });
 
-    it('should filter by boolean properties using filter()', () => {
+    it('should filter by boolean properties using filter()', async () => {
       // Boolean filtering requires filter() since SQLite stores as integers
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .filter(node => node.properties.remote === false)
         .exec();
 
       expect(results).toHaveLength(2);
     });
 
-    it('should return empty array when no matches', () => {
-      const results = db.nodes('Job')
+    it('should return empty array when no matches', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'nonexistent' })
         .exec();
 
       expect(results).toHaveLength(0);
     });
 
-    it('should handle nested property filtering', () => {
-      db.createNode('Job', {
+    it('should handle nested property filtering', async () => {
+      await db.createNode('Job', {
         title: 'Complex Job',
         details: { location: 'NYC', team: 'Engineering' }
       });
 
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .where({ title: 'Complex Job' })
         .exec();
 
@@ -199,9 +199,9 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('filter() custom predicate', () => {
-    it('should filter with custom JavaScript predicate', () => {
-      const results = db.nodes('Job')
+  describe('filter() custom predicate', async () => {
+    it('should filter with custom JavaScript predicate', async () => {
+      const results = await db.nodes('Job')
         .filter(node => node.properties.salary >= 180000)
         .exec();
 
@@ -211,8 +211,8 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should combine where() and filter()', () => {
-      const results = db.nodes('Job')
+    it('should combine where() and filter()', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .filter(node => node.properties.salary >= 180000)
         .exec();
@@ -224,8 +224,8 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should support multiple filter() calls (AND logic)', () => {
-      const results = db.nodes('Job')
+    it('should support multiple filter() calls (AND logic)', async () => {
+      const results = await db.nodes('Job')
         .filter(node => node.properties.status === 'active')
         .filter(node => node.properties.remote === true)
         .filter(node => node.properties.salary >= 150000)
@@ -234,8 +234,8 @@ describe('NodeQuery', () => {
       expect(results).toHaveLength(2);
     });
 
-    it('should handle complex predicates', () => {
-      const results = db.nodes('Job')
+    it('should handle complex predicates', async () => {
+      const results = await db.nodes('Job')
         .filter(node => {
           const salary = node.properties.salary;
           const title = node.properties.title.toLowerCase();
@@ -251,17 +251,17 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('connectedTo() relationship queries', () => {
-    it('should find nodes connected outward', () => {
-      const results = db.nodes('Job')
+  describe('connectedTo() relationship queries', async () => {
+    it('should find nodes connected outward', async () => {
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY', 'out')
         .exec();
 
       expect(results).toHaveLength(4);
     });
 
-    it('should find nodes connected inward', () => {
-      const results = db.nodes('Company')
+    it('should find nodes connected inward', async () => {
+      const results = await db.nodes('Company')
         .connectedTo('Job', 'POSTED_BY', 'in')
         .exec();
 
@@ -269,16 +269,16 @@ describe('NodeQuery', () => {
       expect(results.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should default to outward direction', () => {
-      const results = db.nodes('Job')
+    it('should default to outward direction', async () => {
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY')
         .exec();
 
       expect(results).toHaveLength(4);
     });
 
-    it('should combine connectedTo() with where()', () => {
-      const results = db.nodes('Job')
+    it('should combine connectedTo() with where()', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .connectedTo('Company', 'POSTED_BY')
         .exec();
@@ -286,8 +286,8 @@ describe('NodeQuery', () => {
       expect(results).toHaveLength(3);
     });
 
-    it('should support multiple connectedTo() calls', () => {
-      const results = db.nodes('Job')
+    it('should support multiple connectedTo() calls', async () => {
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY')
         .connectedTo('Skill', 'REQUIRES')
         .exec();
@@ -303,10 +303,10 @@ describe('NodeQuery', () => {
       expect(jobsWithSkills.length).toBeGreaterThan(0);
     });
 
-    it('should handle jobs with no connections', () => {
-      db.createNode('Job', { title: 'Orphan Job', status: 'active' });
+    it('should handle jobs with no connections', async () => {
+      await db.createNode('Job', { title: 'Orphan Job', status: 'active' });
 
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY')
         .exec();
 
@@ -314,9 +314,9 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('notConnectedTo() negative relationship queries', () => {
-    it('should find nodes NOT connected to specific type', () => {
-      const orphan = db.createNode('Job', { title: 'Orphan Job', status: 'active' });
+  describe('notConnectedTo() negative relationship queries', async () => {
+    it('should find nodes NOT connected to specific type', async () => {
+      const orphan = await db.createNode('Job', { title: 'Orphan Job', status: 'active' });
 
       // Note: notConnectedTo() is defined but may not be fully implemented with NOT EXISTS
       // Test that method exists and returns results (actual behavior may vary)
@@ -325,14 +325,14 @@ describe('NodeQuery', () => {
       expect(typeof query.exec).toBe('function');
 
       // If implementation is complete, orphan should be the only result
-      const results = query.exec();
+      const results = await query.exec();
       const hasOrphan = results.some(r => r.id === orphan.id);
       expect(results.length).toBeGreaterThan(0);
     });
 
-    it('should combine notConnectedTo() with where()', () => {
-      db.createNode('Job', { title: 'Orphan Active', status: 'active' });
-      db.createNode('Job', { title: 'Orphan Closed', status: 'closed' });
+    it('should combine notConnectedTo() with where()', async () => {
+      await db.createNode('Job', { title: 'Orphan Active', status: 'active' });
+      await db.createNode('Job', { title: 'Orphan Closed', status: 'closed' });
 
       // Test method chaining works
       const query = db.nodes('Job')
@@ -340,14 +340,14 @@ describe('NodeQuery', () => {
         .notConnectedTo('Company', 'POSTED_BY');
 
       expect(query).toBeDefined();
-      const results = query.exec();
+      const results = await query.exec();
       expect(Array.isArray(results)).toBe(true);
     });
   });
 
-  describe('orderBy() sorting', () => {
-    it('should sort by string property ascending', () => {
-      const results = db.nodes('Job')
+  describe('orderBy() sorting', async () => {
+    it('should sort by string property ascending', async () => {
+      const results = await db.nodes('Job')
         .orderBy('title', 'asc')
         .exec();
 
@@ -357,8 +357,8 @@ describe('NodeQuery', () => {
       }
     });
 
-    it('should sort by string property descending', () => {
-      const results = db.nodes('Job')
+    it('should sort by string property descending', async () => {
+      const results = await db.nodes('Job')
         .orderBy('title', 'desc')
         .exec();
 
@@ -368,8 +368,8 @@ describe('NodeQuery', () => {
       }
     });
 
-    it('should sort by numeric property ascending', () => {
-      const results = db.nodes('Job')
+    it('should sort by numeric property ascending', async () => {
+      const results = await db.nodes('Job')
         .orderBy('salary', 'asc')
         .exec();
 
@@ -379,8 +379,8 @@ describe('NodeQuery', () => {
       }
     });
 
-    it('should sort by numeric property descending', () => {
-      const results = db.nodes('Job')
+    it('should sort by numeric property descending', async () => {
+      const results = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .exec();
 
@@ -388,8 +388,8 @@ describe('NodeQuery', () => {
       expect(salaries).toEqual([200000, 180000, 150000, 80000]);
     });
 
-    it('should default to ascending order', () => {
-      const results = db.nodes('Job')
+    it('should default to ascending order', async () => {
+      const results = await db.nodes('Job')
         .orderBy('salary')
         .exec();
 
@@ -397,8 +397,8 @@ describe('NodeQuery', () => {
       expect(salaries).toEqual([80000, 150000, 180000, 200000]);
     });
 
-    it('should combine orderBy() with where()', () => {
-      const results = db.nodes('Job')
+    it('should combine orderBy() with where()', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .orderBy('salary', 'desc')
         .exec();
@@ -409,29 +409,29 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('limit() pagination', () => {
-    it('should limit number of results', () => {
-      const results = db.nodes('Job')
+  describe('limit() pagination', async () => {
+    it('should limit number of results', async () => {
+      const results = await db.nodes('Job')
         .limit(2)
         .exec();
 
       expect(results).toHaveLength(2);
     });
 
-    it('should throw error on zero limit', () => {
+    it('should throw error on zero limit', async () => {
       expect(() => {
         db.nodes('Job').limit(0);
       }).toThrow('Limit must be a positive integer');
     });
 
-    it('should throw error on negative limit', () => {
+    it('should throw error on negative limit', async () => {
       expect(() => {
         db.nodes('Job').limit(-5);
       }).toThrow('Limit must be a positive integer');
     });
 
-    it('should combine limit() with orderBy()', () => {
-      const results = db.nodes('Job')
+    it('should combine limit() with orderBy()', async () => {
+      const results = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .limit(2)
         .exec();
@@ -441,8 +441,8 @@ describe('NodeQuery', () => {
       expect(results[1].properties.salary).toBe(180000);
     });
 
-    it('should handle limit larger than result set', () => {
-      const results = db.nodes('Job')
+    it('should handle limit larger than result set', async () => {
+      const results = await db.nodes('Job')
         .limit(100)
         .exec();
 
@@ -450,14 +450,14 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('offset() pagination', () => {
-    it('should skip results with offset (requires limit)', () => {
-      const allResults = db.nodes('Job')
+  describe('offset() pagination', async () => {
+    it('should skip results with offset (requires limit)', async () => {
+      const allResults = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .exec();
 
       // SQLite requires LIMIT when using OFFSET
-      const offsetResults = db.nodes('Job')
+      const offsetResults = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .limit(10)
         .offset(2)
@@ -467,8 +467,8 @@ describe('NodeQuery', () => {
       expect(offsetResults[0].id).toBe(allResults[2].id);
     });
 
-    it('should accept zero offset', () => {
-      const results = db.nodes('Job')
+    it('should accept zero offset', async () => {
+      const results = await db.nodes('Job')
         .limit(10)
         .offset(0)
         .exec();
@@ -476,20 +476,20 @@ describe('NodeQuery', () => {
       expect(results).toHaveLength(4);
     });
 
-    it('should throw error on negative offset', () => {
+    it('should throw error on negative offset', async () => {
       expect(() => {
         db.nodes('Job').offset(-1);
       }).toThrow('Offset must be a non-negative integer');
     });
 
-    it('should combine offset() and limit() for pagination', () => {
-      const page1 = db.nodes('Job')
+    it('should combine offset() and limit() for pagination', async () => {
+      const page1 = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .limit(2)
         .offset(0)
         .exec();
 
-      const page2 = db.nodes('Job')
+      const page2 = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .limit(2)
         .offset(2)
@@ -505,8 +505,8 @@ describe('NodeQuery', () => {
       expect(salariesPage2).toEqual([150000, 80000]);
     });
 
-    it('should handle offset beyond result set', () => {
-      const results = db.nodes('Job')
+    it('should handle offset beyond result set', async () => {
+      const results = await db.nodes('Job')
         .limit(10)
         .offset(100)
         .exec();
@@ -515,9 +515,9 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('exec() query execution', () => {
-    it('should execute query and return nodes', () => {
-      const results = db.nodes('Job').exec();
+  describe('exec() query execution', async () => {
+    it('should execute query and return nodes', async () => {
+      const results = await db.nodes('Job').exec();
 
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
@@ -531,8 +531,8 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should return nodes with proper types', () => {
-      const results = db.nodes('Job').exec();
+    it('should return nodes with proper types', async () => {
+      const results = await db.nodes('Job').exec();
 
       results.forEach(node => {
         expect(typeof node.id).toBe('number');
@@ -543,14 +543,14 @@ describe('NodeQuery', () => {
       });
     });
 
-    it('should handle queries with no results', () => {
-      const results = db.nodes('NonExistentType').exec();
+    it('should handle queries with no results', async () => {
+      const results = await db.nodes('NonExistentType').exec();
 
       expect(results).toEqual([]);
     });
 
-    it('should execute complex queries correctly', () => {
-      const results = db.nodes('Job')
+    it('should execute complex queries correctly', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .connectedTo('Company', 'POSTED_BY')
         .orderBy('salary', 'desc')
@@ -563,9 +563,9 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('first() single result', () => {
-    it('should return first matching node', () => {
-      const result = db.nodes('Job')
+  describe('first() single result', async () => {
+    it('should return first matching node', async () => {
+      const result = await db.nodes('Job')
         .orderBy('salary', 'desc')
         .first();
 
@@ -573,16 +573,16 @@ describe('NodeQuery', () => {
       expect(result?.properties.salary).toBe(200000);
     });
 
-    it('should return null when no matches', () => {
-      const result = db.nodes('Job')
+    it('should return null when no matches', async () => {
+      const result = await db.nodes('Job')
         .where({ status: 'nonexistent' })
         .first();
 
       expect(result).toBeNull();
     });
 
-    it('should work with where() filtering', () => {
-      const result = db.nodes('Job')
+    it('should work with where() filtering', async () => {
+      const result = await db.nodes('Job')
         .where({ status: 'closed' })
         .first();
 
@@ -590,42 +590,42 @@ describe('NodeQuery', () => {
       expect(result?.properties.status).toBe('closed');
     });
 
-    it('should not affect subsequent queries', () => {
+    it('should not affect subsequent queries', async () => {
       const query = db.nodes('Job').orderBy('salary', 'desc');
 
-      const first = query.first();
-      const all = query.exec();
+      const first = await query.first();
+      const all = await query.exec();
 
       expect(first).not.toBeNull();
       expect(all).toHaveLength(4);
     });
   });
 
-  describe('count() aggregation', () => {
-    it('should count all nodes of type', () => {
-      const count = db.nodes('Job').count();
+  describe('count() aggregation', async () => {
+    it('should count all nodes of type', async () => {
+      const count = await db.nodes('Job').count();
 
       expect(count).toBe(4);
     });
 
-    it('should count filtered results', () => {
-      const count = db.nodes('Job')
+    it('should count filtered results', async () => {
+      const count = await db.nodes('Job')
         .where({ status: 'active' })
         .count();
 
       expect(count).toBe(3);
     });
 
-    it('should return 0 for no matches', () => {
-      const count = db.nodes('Job')
+    it('should return 0 for no matches', async () => {
+      const count = await db.nodes('Job')
         .where({ status: 'nonexistent' })
         .count();
 
       expect(count).toBe(0);
     });
 
-    it('should count with connectedTo() filtering', () => {
-      const count = db.nodes('Job')
+    it('should count with connectedTo() filtering', async () => {
+      const count = await db.nodes('Job')
         .connectedTo('Skill', 'REQUIRES')
         .count();
 
@@ -634,24 +634,24 @@ describe('NodeQuery', () => {
       expect(count).toBeLessThanOrEqual(4);
     });
 
-    it('should not be affected by limit/offset', () => {
-      const countAll = db.nodes('Job').count();
-      const countLimited = db.nodes('Job').limit(2).count();
+    it('should not be affected by limit/offset', async () => {
+      const countAll = await db.nodes('Job').count();
+      const countLimited = await db.nodes('Job').limit(2).count();
 
       expect(countAll).toBe(countLimited);
     });
 
-    it('should use COUNT(DISTINCT) for both direction to avoid duplicates', () => {
+    it('should use COUNT(DISTINCT) for both direction to avoid duplicates', async () => {
       // Create bidirectional relationship
-      const person1 = db.createNode('Person', { name: 'Alice' });
-      const person2 = db.createNode('Person', { name: 'Bob' });
+      const person1 = await db.createNode('Person', { name: 'Alice' });
+      const person2 = await db.createNode('Person', { name: 'Bob' });
 
       // Create edges in both directions (simulating bidirectional KNOWS relationship)
-      db.createEdge(person1.id, 'KNOWS', person2.id);
-      db.createEdge(person2.id, 'KNOWS', person1.id);
+      await db.createEdge(person1.id, 'KNOWS', person2.id);
+      await db.createEdge(person2.id, 'KNOWS', person1.id);
 
       // Count with 'both' direction should use DISTINCT to avoid counting duplicates
-      const count = db.nodes('Person')
+      const count = await db.nodes('Person')
         .connectedTo('Person', 'KNOWS', 'both')
         .count();
 
@@ -660,35 +660,35 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('exists() predicate', () => {
-    it('should return true when nodes exist', () => {
-      const exists = db.nodes('Job')
+  describe('exists() predicate', async () => {
+    it('should return true when nodes exist', async () => {
+      const exists = await db.nodes('Job')
         .where({ status: 'active' })
         .exists();
 
       expect(exists).toBe(true);
     });
 
-    it('should return false when no nodes exist', () => {
-      const exists = db.nodes('Job')
+    it('should return false when no nodes exist', async () => {
+      const exists = await db.nodes('Job')
         .where({ status: 'nonexistent' })
         .exists();
 
       expect(exists).toBe(false);
     });
 
-    it('should work with empty database', () => {
+    it('should work with empty database', async () => {
       const emptyDb = new GraphDatabase(':memory:');
-      const exists = emptyDb.nodes('Job').exists();
+      const exists = await emptyDb.nodes('Job').exists();
 
       expect(exists).toBe(false);
-      emptyDb.close();
+      await emptyDb.close();
     });
   });
 
-  describe('both() bidirectional relationships', () => {
-    it('should find nodes connected in either direction', () => {
-      const results = db.nodes('Job')
+  describe('both() bidirectional relationships', async () => {
+    it('should find nodes connected in either direction', async () => {
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY', 'both')
         .exec();
 
@@ -696,14 +696,14 @@ describe('NodeQuery', () => {
       expect(results.length).toBeGreaterThan(0);
     });
 
-    it('should handle truly bidirectional edges', () => {
+    it('should handle truly bidirectional edges', async () => {
       // Create bidirectional relationship
-      const person1 = db.createNode('Person', { name: 'Alice' });
-      const person2 = db.createNode('Person', { name: 'Bob' });
-      db.createEdge(person1.id, 'KNOWS', person2.id);
-      db.createEdge(person2.id, 'KNOWS', person1.id);
+      const person1 = await db.createNode('Person', { name: 'Alice' });
+      const person2 = await db.createNode('Person', { name: 'Bob' });
+      await db.createEdge(person1.id, 'KNOWS', person2.id);
+      await db.createEdge(person2.id, 'KNOWS', person1.id);
 
-      const results = db.nodes('Person')
+      const results = await db.nodes('Person')
         .connectedTo('Person', 'KNOWS', 'both')
         .exec();
 
@@ -711,29 +711,29 @@ describe('NodeQuery', () => {
     });
   });
 
-  describe('Edge cases and error conditions', () => {
-    it('should handle empty property object in where()', () => {
-      const results = db.nodes('Job')
+  describe('Edge cases and error conditions', async () => {
+    it('should handle empty property object in where()', async () => {
+      const results = await db.nodes('Job')
         .where({})
         .exec();
 
       expect(results).toHaveLength(4);
     });
 
-    it('should handle undefined properties gracefully', () => {
-      const results = db.nodes('Job')
+    it('should handle undefined properties gracefully', async () => {
+      const results = await db.nodes('Job')
         .where({ nonExistentField: 'value' })
         .exec();
 
       expect(results).toHaveLength(0);
     });
 
-    it('should handle null property values', () => {
-      const job = db.createNode('Job', { title: 'Test', description: null });
+    it('should handle null property values', async () => {
+      const job = await db.createNode('Job', { title: 'Test', description: null });
 
       // SQLite/JSON handling of null in where() may differ from expectations
       // Test that we can query by title and get the job with null description
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .where({ title: 'Test' })
         .exec();
 
@@ -741,21 +741,21 @@ describe('NodeQuery', () => {
       expect(results[0].properties.description).toBeNull();
     });
 
-    it('should handle special characters in string properties', () => {
-      db.createNode('Job', { title: "Engineer's Job", company: 'O"Brien & Co' });
+    it('should handle special characters in string properties', async () => {
+      await db.createNode('Job', { title: "Engineer's Job", company: 'O"Brien & Co' });
 
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .where({ title: "Engineer's Job" })
         .exec();
 
       expect(results).toHaveLength(1);
     });
 
-    it('should handle very long property values', () => {
+    it('should handle very long property values', async () => {
       const longString = 'x'.repeat(10000);
-      db.createNode('Job', { title: 'Long Job', description: longString });
+      await db.createNode('Job', { title: 'Long Job', description: longString });
 
-      const results = db.nodes('Job')
+      const results = await db.nodes('Job')
         .where({ title: 'Long Job' })
         .exec();
 
@@ -763,8 +763,8 @@ describe('NodeQuery', () => {
       expect(results[0].properties.description).toBe(longString);
     });
 
-    it('should handle chaining same method multiple times', () => {
-      const results = db.nodes('Job')
+    it('should handle chaining same method multiple times', async () => {
+      const results = await db.nodes('Job')
         .where({ status: 'active' })
         .where({ salary: 150000 })
         .where({ posted: '2025-01-15' })
@@ -774,26 +774,26 @@ describe('NodeQuery', () => {
       expect(results[0].properties.title).toBe('Senior Engineer');
     });
 
-    it('should handle query reuse', () => {
+    it('should handle query reuse', async () => {
       const query = db.nodes('Job').where({ status: 'active' });
 
-      const results1 = query.exec();
-      const results2 = query.exec();
+      const results1 = await query.exec();
+      const results2 = await query.exec();
 
       expect(results1).toHaveLength(results2.length);
       expect(results1[0].id).toBe(results2[0].id);
     });
   });
 
-  describe('Performance and SQL generation', () => {
-    it('should handle large result sets efficiently', () => {
+  describe('Performance and SQL generation', async () => {
+    it('should handle large result sets efficiently', async () => {
       // Create 1000 nodes
       for (let i = 0; i < 1000; i++) {
-        db.createNode('TestNode', { index: i, category: i % 10 });
+        await db.createNode('TestNode', { index: i, category: i % 10 });
       }
 
       const start = Date.now();
-      const results = db.nodes('TestNode')
+      const results = await db.nodes('TestNode')
         .where({ category: 5 })
         .orderBy('index', 'asc')
         .limit(10)
@@ -804,14 +804,14 @@ describe('NodeQuery', () => {
       expect(duration).toBeLessThan(1000); // Should complete in under 1 second
     });
 
-    it('should execute distinct queries for both direction', () => {
+    it('should execute distinct queries for both direction', async () => {
       // This tests the DISTINCT SQL generation for 'both' direction
-      const person1 = db.createNode('Person', { name: 'Alice' });
-      const person2 = db.createNode('Person', { name: 'Bob' });
-      db.createEdge(person1.id, 'KNOWS', person2.id);
-      db.createEdge(person2.id, 'KNOWS', person1.id);
+      const person1 = await db.createNode('Person', { name: 'Alice' });
+      const person2 = await db.createNode('Person', { name: 'Bob' });
+      await db.createEdge(person1.id, 'KNOWS', person2.id);
+      await db.createEdge(person2.id, 'KNOWS', person1.id);
 
-      const results = db.nodes('Person')
+      const results = await db.nodes('Person')
         .connectedTo('Person', 'KNOWS', 'both')
         .exec();
 
@@ -821,8 +821,8 @@ describe('NodeQuery', () => {
       expect(ids.length).toBe(uniqueIds.length);
     });
 
-    it('should handle multiple joins efficiently', () => {
-      const results = db.nodes('Job')
+    it('should handle multiple joins efficiently', async () => {
+      const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY')
         .connectedTo('Skill', 'REQUIRES')
         .where({ status: 'active' })
