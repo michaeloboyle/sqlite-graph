@@ -2,7 +2,7 @@ import { GraphDatabase } from '../../src/core/Database';
 import { Node, Edge, GraphSchema, GraphExport } from '../../src/types';
 import { TransactionAlreadyFinalizedError } from '../../src/core/Transaction';
 
-describe('GraphDatabase', async () => {
+describe('GraphDatabase', () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe('GraphDatabase', async () => {
     await db.close();
   });
 
-  describe('constructor', async () => {
+  describe('constructor', () => {
     it('should create database with in-memory path', async () => {
       const testDb = new GraphDatabase(':memory:');
       expect(testDb).toBeDefined();
@@ -47,7 +47,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('createNode', async () => {
+  describe('createNode', () => {
     it('should create node with valid type and properties', async () => {
       const node = await db.createNode('Job', {
         title: 'Senior Engineer',
@@ -129,7 +129,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('getNode', async () => {
+  describe('getNode', () => {
     it('should retrieve existing node by ID', async () => {
       const created = await db.createNode('Job', { title: 'Engineer', status: 'active' });
       const retrieved = await db.getNode(created.id);
@@ -171,7 +171,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('updateNode', async () => {
+  describe('updateNode', () => {
     it('should update node properties', async () => {
       const created = await db.createNode('Job', { title: 'Engineer', status: 'draft' });
       const updated = await db.updateNode(created.id, { status: 'active', views: 100 });
@@ -229,13 +229,13 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('deleteNode', async () => {
+  describe('deleteNode', () => {
     it('should delete existing node', async () => {
       const node = await db.createNode('Job', { title: 'Engineer' });
       const deleted = await db.deleteNode(node.id);
 
       expect(deleted).toBe(true);
-      expect(db.getNode(node.id)).toBeNull();
+      expect(await db.getNode(node.id)).toBeNull();
     });
 
     it('should return false for non-existent node', async () => {
@@ -252,10 +252,10 @@ describe('GraphDatabase', async () => {
       await db.deleteNode(job.id);
 
       // Verify node is deleted
-      expect(db.getNode(job.id)).toBeNull();
+      expect(await db.getNode(job.id)).toBeNull();
 
       // Verify edge is also deleted (cascade)
-      expect(db.getEdge(edge.id)).toBeNull();
+      expect(await db.getEdge(edge.id)).toBeNull();
     });
 
     it('should throw error for invalid node ID', async () => {
@@ -274,7 +274,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('createEdge', async () => {
+  describe('createEdge', () => {
     let jobNode: Node;
     let companyNode: Node;
 
@@ -348,7 +348,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('getEdge', async () => {
+  describe('getEdge', () => {
     it('should retrieve existing edge by ID', async () => {
       const job = await db.createNode('Job', { title: 'Engineer' });
       const company = await db.createNode('Company', { name: 'TechCorp' });
@@ -375,7 +375,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('deleteEdge', async () => {
+  describe('deleteEdge', () => {
     it('should delete existing edge', async () => {
       const job = await db.createNode('Job', { title: 'Engineer' });
       const company = await db.createNode('Company', { name: 'TechCorp' });
@@ -384,7 +384,7 @@ describe('GraphDatabase', async () => {
       const deleted = await db.deleteEdge(edge.id);
 
       expect(deleted).toBe(true);
-      expect(db.getEdge(edge.id)).toBeNull();
+      expect(await db.getEdge(edge.id)).toBeNull();
     });
 
     it('should return false for non-existent edge', async () => {
@@ -399,8 +399,8 @@ describe('GraphDatabase', async () => {
 
       await db.deleteEdge(edge.id);
 
-      expect(db.getNode(job.id)).toBeDefined();
-      expect(db.getNode(company.id)).toBeDefined();
+      expect(await db.getNode(job.id)).toBeDefined();
+      expect(await db.getNode(company.id)).toBeDefined();
     });
 
     it('should throw error for invalid edge ID', async () => {
@@ -409,7 +409,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('transaction', async () => {
+  describe('transaction', () => {
     it('should commit transaction on success', async () => {
       const result = await db.transaction(async () => {
         const job = await db.createNode('Job', { title: 'Engineer' });
@@ -420,8 +420,8 @@ describe('GraphDatabase', async () => {
 
       expect(result.job).toBeDefined();
       expect(result.company).toBeDefined();
-      expect(db.getNode(result.job.id)).toBeDefined();
-      expect(db.getNode(result.company.id)).toBeDefined();
+      expect(await db.getNode(result.job.id)).toBeDefined();
+      expect(await db.getNode(result.company.id)).toBeDefined();
     });
 
     it('should rollback transaction on error', async () => {
@@ -513,7 +513,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('export', async () => {
+  describe('export', () => {
     it('should export empty database', async () => {
       const exported = await db.export();
 
@@ -577,7 +577,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('import', async () => {
+  describe('import', () => {
     it('should import empty dataset', async () => {
       const data: GraphExport = {
         nodes: [],
@@ -712,7 +712,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('nodes', async () => {
+  describe('nodes', () => {
     it('should return NodeQuery instance', async () => {
       const query = db.nodes('Job');
       expect(query).toBeDefined();
@@ -728,7 +728,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('traverse', async () => {
+  describe('traverse', () => {
     it('should return TraversalQuery instance', async () => {
       const node = await db.createNode('Job', { title: 'Engineer' });
       const query = db.traverse(node.id);
@@ -746,7 +746,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('close', async () => {
+  describe('close', () => {
     it('should close database connection', async () => {
       const testDb = new GraphDatabase(':memory:');
       await testDb.close();
@@ -774,7 +774,7 @@ describe('GraphDatabase', async () => {
     });
   });
 
-  describe('edge cases and error handling', async () => {
+  describe('edge cases and error handling', () => {
     it('should handle very long strings in properties', async () => {
       const longString = 'a'.repeat(10000);
       const node = await db.createNode('Job', { description: longString });

@@ -6,7 +6,7 @@ import { Node } from '../../src/types';
  * Integration tests for complete job application tracking workflows.
  * Tests real-world scenarios combining CRUD operations, queries, and traversals.
  */
-describe('Job Application Pipeline - Integration Tests', async () => {
+describe('Job Application Pipeline - Integration Tests', () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     await db.close();
   });
 
-  describe('Complete Job Discovery to Application Workflow', async () => {
+  describe('Complete Job Discovery to Application Workflow', () => {
     it('should track complete job application lifecycle', async () => {
       // 1. Create companies
       const techCorp = await db.createNode('Company', {
@@ -217,7 +217,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     });
   });
 
-  describe('Skill Matching and Job Discovery', async () => {
+  describe('Skill Matching and Job Discovery', () => {
     it('should find jobs matching skill requirements', async () => {
       // Create skills
       const ts = await db.createNode('Skill', { name: 'TypeScript' });
@@ -253,10 +253,11 @@ describe('Job Application Pipeline - Integration Tests', async () => {
         .where({ status: 'active' })
         .exec();
 
-      const tsJobs = allActiveJobs.filter(async job => {
+      const tsJobMatches = await Promise.all(allActiveJobs.map(async job => {
         const skills = await db.traverse(job.id).out('REQUIRES').toArray();
         return skills.some(skill => skill.properties.name === 'TypeScript');
-      });
+      }));
+      const tsJobs = allActiveJobs.filter((_, index) => tsJobMatches[index]);
 
       expect(tsJobs).toHaveLength(2);
       const titles = tsJobs.map(j => j.properties.title).sort();
@@ -293,7 +294,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     });
   });
 
-  describe('Company and Network Analysis', async () => {
+  describe('Company and Network Analysis', () => {
     it('should analyze company job posting patterns', async () => {
       const company = await db.createNode('Company', {
         name: 'BigTech Inc',
@@ -380,7 +381,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     });
   });
 
-  describe('Interview and Offer Management', async () => {
+  describe('Interview and Offer Management', () => {
     it('should track interview pipeline with multiple rounds', async () => {
       const company = await db.createNode('Company', { name: 'InterviewCorp' });
       const job = await db.createNode('Job', {
@@ -502,7 +503,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     });
   });
 
-  describe('Data Integrity and Consistency', async () => {
+  describe('Data Integrity and Consistency', () => {
     it('should maintain referential integrity when deleting jobs', async () => {
       const company = await db.createNode('Company', { name: 'TestCorp' });
       const job = await db.createNode('Job', { title: 'Test Job' });
@@ -563,7 +564,7 @@ describe('Job Application Pipeline - Integration Tests', async () => {
     });
   });
 
-  describe('Performance with Realistic Data Volumes', async () => {
+  describe('Performance with Realistic Data Volumes', () => {
     it('should handle 100+ jobs efficiently', async () => {
       const startTime = Date.now();
 
@@ -618,10 +619,10 @@ describe('Job Application Pipeline - Integration Tests', async () => {
 
       // Traversal performance
       const traversalStart = Date.now();
-      jobs.slice(0, 10).forEach(async job => {
+      await Promise.all(jobs.slice(0, 10).map(async job => {
         await db.traverse(job.id).out('POSTED_BY').toArray();
         await db.traverse(job.id).out('REQUIRES').toArray();
-      });
+      }));
       const traversalTime = Date.now() - traversalStart;
 
       // Assertions

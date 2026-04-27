@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { GraphDatabase } from '../../src/core/Database';
 import { Node } from '../../src/types';
 
-describe('NodeQuery', async () => {
+describe('NodeQuery', () => {
   let db: GraphDatabase;
 
   beforeEach(async () => {
@@ -65,7 +65,7 @@ describe('NodeQuery', async () => {
     await db.close();
   });
 
-  describe('Fluent API method chaining', async () => {
+  describe('Fluent API method chaining', () => {
     it('should return query instance for chaining where()', async () => {
       const query = db.nodes('Job')
         .where({ status: 'active' })
@@ -119,7 +119,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('where() filtering', async () => {
+  describe('where() filtering', () => {
     it('should filter nodes by single property', async () => {
       const results = await db.nodes('Job')
         .where({ status: 'active' })
@@ -199,7 +199,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('filter() custom predicate', async () => {
+  describe('filter() custom predicate', () => {
     it('should filter with custom JavaScript predicate', async () => {
       const results = await db.nodes('Job')
         .filter(node => node.properties.salary >= 180000)
@@ -251,7 +251,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('connectedTo() relationship queries', async () => {
+  describe('connectedTo() relationship queries', () => {
     it('should find nodes connected outward', async () => {
       const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY', 'out')
@@ -314,7 +314,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('notConnectedTo() negative relationship queries', async () => {
+  describe('notConnectedTo() negative relationship queries', () => {
     it('should find nodes NOT connected to specific type', async () => {
       const orphan = await db.createNode('Job', { title: 'Orphan Job', status: 'active' });
 
@@ -345,7 +345,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('orderBy() sorting', async () => {
+  describe('orderBy() sorting', () => {
     it('should sort by string property ascending', async () => {
       const results = await db.nodes('Job')
         .orderBy('title', 'asc')
@@ -409,7 +409,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('limit() pagination', async () => {
+  describe('limit() pagination', () => {
     it('should limit number of results', async () => {
       const results = await db.nodes('Job')
         .limit(2)
@@ -450,7 +450,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('offset() pagination', async () => {
+  describe('offset() pagination', () => {
     it('should skip results with offset (requires limit)', async () => {
       const allResults = await db.nodes('Job')
         .orderBy('salary', 'desc')
@@ -515,7 +515,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('exec() query execution', async () => {
+  describe('exec() query execution', () => {
     it('should execute query and return nodes', async () => {
       const results = await db.nodes('Job').exec();
 
@@ -563,7 +563,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('first() single result', async () => {
+  describe('first() single result', () => {
     it('should return first matching node', async () => {
       const result = await db.nodes('Job')
         .orderBy('salary', 'desc')
@@ -601,7 +601,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('count() aggregation', async () => {
+  describe('count() aggregation', () => {
     it('should count all nodes of type', async () => {
       const count = await db.nodes('Job').count();
 
@@ -660,7 +660,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('exists() predicate', async () => {
+  describe('exists() predicate', () => {
     it('should return true when nodes exist', async () => {
       const exists = await db.nodes('Job')
         .where({ status: 'active' })
@@ -686,7 +686,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('both() bidirectional relationships', async () => {
+  describe('both() bidirectional relationships', () => {
     it('should find nodes connected in either direction', async () => {
       const results = await db.nodes('Job')
         .connectedTo('Company', 'POSTED_BY', 'both')
@@ -711,7 +711,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('Edge cases and error conditions', async () => {
+  describe('Edge cases and error conditions', () => {
     it('should handle empty property object in where()', async () => {
       const results = await db.nodes('Job')
         .where({})
@@ -785,7 +785,7 @@ describe('NodeQuery', async () => {
     });
   });
 
-  describe('Performance and SQL generation', async () => {
+  describe('Performance and SQL generation', () => {
     it('should handle large result sets efficiently', async () => {
       // Create 1000 nodes
       for (let i = 0; i < 1000; i++) {

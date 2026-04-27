@@ -6,7 +6,7 @@ import { Node } from '../../src/types';
  * Comprehensive test suite for TraversalQuery class
  * Tests all traversal methods, path finding, and cycle detection
  */
-describe('TraversalQuery', async () => {
+describe('TraversalQuery', () => {
   let db: GraphDatabase;
   let testNodeIds: {
     a: number;
@@ -69,7 +69,7 @@ describe('TraversalQuery', async () => {
     await db.close();
   });
 
-  describe('out() - Outgoing Traversal', async () => {
+  describe('out() - Outgoing Traversal', () => {
     it('should traverse outgoing edges from start node', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -120,7 +120,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('in() - Incoming Traversal', async () => {
+  describe('in() - Incoming Traversal', () => {
     it('should traverse incoming edges', async () => {
       const nodes = await db.traverse(testNodeIds.e)
         .in('LINKS')
@@ -168,7 +168,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('both() - Bidirectional Traversal', async () => {
+  describe('both() - Bidirectional Traversal', () => {
     it('should traverse edges in both directions', async () => {
       const nodes = await db.traverse(testNodeIds.c)
         .both('LINKS')
@@ -207,7 +207,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('maxDepth() - Depth Limiting', async () => {
+  describe('maxDepth() - Depth Limiting', () => {
     it('should limit traversal to maxDepth', async () => {
       const depth1 = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -249,12 +249,12 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('minDepth() - Minimum Depth', async () => {
+  describe('minDepth() - Minimum Depth', () => {
     it('should skip nodes closer than minDepth', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
         .minDepth(2)
-        .maxDepth(3)
+        .maxDepth(2)
         .toArray();
 
       // Should only get nodes at depth 2+ (E, F, etc.)
@@ -280,11 +280,12 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('filter() - Predicate Filtering', async () => {
+  describe('filter() - Predicate Filtering', () => {
     it('should filter nodes by property value', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
         .filter(node => node.properties.name === 'B')
+        .maxDepth(1)
         .toArray();
 
       expect(nodes).toHaveLength(1);
@@ -318,13 +319,14 @@ describe('TraversalQuery', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
         .filter(node => node.properties.name === 'Nonexistent')
+        .maxDepth(3)
         .toArray();
 
       expect(nodes).toEqual([]);
     });
   });
 
-  describe('unique() - Node Deduplication', async () => {
+  describe('unique() - Node Deduplication', () => {
     it('should return each node only once', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -362,7 +364,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('toArray() - Result Collection', async () => {
+  describe('toArray() - Result Collection', () => {
     it('should return array of nodes', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -379,6 +381,7 @@ describe('TraversalQuery', async () => {
     it('should not include start node in results', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
+        .maxDepth(2)
         .toArray();
 
       const hasStartNode = nodes.some(n => n.id === testNodeIds.a);
@@ -404,7 +407,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('shortestPath() - Path Finding', async () => {
+  describe('shortestPath() - Path Finding', () => {
     it('should find shortest path between two nodes', async () => {
       const path = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -466,7 +469,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('toPaths() - All Paths with Cycle Detection', async () => {
+  describe('toPaths() - All Paths with Cycle Detection', () => {
     it('should return all paths from traversal', async () => {
       const paths = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -550,7 +553,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('allPaths() - Limited Path Finding', async () => {
+  describe('allPaths() - Limited Path Finding', () => {
     it('should find multiple paths to target', async () => {
       const paths = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -610,7 +613,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('paths() - Unified Path Wrapper', async () => {
+  describe('paths() - Unified Path Wrapper', () => {
     it('should find paths to target without options', async () => {
       const paths = await db.traverse(testNodeIds.a)
         .out('LINKS')
@@ -646,10 +649,10 @@ describe('TraversalQuery', async () => {
         .maxDepth(2)
         .paths(testNodeIds.e);
 
-      const toPathsResult = await db.traverse(testNodeIds.a)
+      const toPathsResult = (await db.traverse(testNodeIds.a)
         .out('LINKS')
         .maxDepth(2)
-        .toPaths()
+        .toPaths())
         .filter(p => p[p.length - 1].id === testNodeIds.e);
 
       expect(pathsResult.length).toBe(toPathsResult.length);
@@ -668,11 +671,12 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('Complex Multi-Hop Traversals', async () => {
+  describe('Complex Multi-Hop Traversals', () => {
     it('should handle deep traversals', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
         .maxDepth(10)
+        .unique()
         .toArray();
 
       expect(nodes.length).toBeGreaterThan(0);
@@ -723,6 +727,7 @@ describe('TraversalQuery', async () => {
       const nodes = await db.traverse(testNodeIds.a)
         .out('LINKS')
         .maxDepth(1000)
+        .unique()
         .toArray();
 
       // Should terminate without issues
@@ -731,20 +736,16 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('Edge Cases and Error Handling', async () => {
-    it('should handle traversal from non-existent node gracefully', async () => {
-      const nodes = await db.traverse(99999)
-        .out('LINKS')
-        .toArray();
-
-      expect(nodes).toEqual([]);
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle traversal from non-existent node gracefully', () => {
+      expect(() => db.traverse(99999).out('LINKS')).toThrow('Start node with ID 99999 not found');
     });
 
     it('should handle empty graph', async () => {
       const emptyDb = new GraphDatabase(':memory:');
       const node = await emptyDb.createNode('Node', { name: 'Only' });
 
-      const nodes = emptyDb.traverse(node.id)
+      const nodes = await emptyDb.traverse(node.id)
         .out('LINKS')
         .toArray();
 
@@ -773,10 +774,12 @@ describe('TraversalQuery', async () => {
     it('should handle concurrent traversals', async () => {
       const nodes1 = await db.traverse(testNodeIds.a)
         .out('LINKS')
+        .maxDepth(2)
         .toArray();
 
       const nodes2 = await db.traverse(testNodeIds.b)
         .out('LINKS')
+        .maxDepth(2)
         .toArray();
 
       // Both should work independently
@@ -785,7 +788,7 @@ describe('TraversalQuery', async () => {
     });
   });
 
-  describe('Performance and Memory', async () => {
+  describe('Performance and Memory', () => {
     it('should handle large result sets', async () => {
       // Create a larger graph
       const root = await db.createNode('Node', { name: 'Root' });

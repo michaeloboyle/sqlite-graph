@@ -1,7 +1,7 @@
 import { GraphDatabase } from '../../src/core/Database';
 import { MergeConflictError } from '../../src/types/merge';
 
-describe('GraphDatabase - Merge Operations', async () => {
+describe('GraphDatabase - Merge Operations', () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
@@ -12,8 +12,8 @@ describe('GraphDatabase - Merge Operations', async () => {
     await db.close();
   });
 
-  describe('mergeNode()', async () => {
-    describe('Node creation', async () => {
+  describe('mergeNode()', () => {
+    describe('Node creation', () => {
       it('should create new node when no match found', async () => {
         const result = await db.mergeNode(
           'Job',
@@ -69,7 +69,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
     });
 
-    describe('Node matching and update', async () => {
+    describe('Node matching and update', () => {
       it('should find existing node by match criteria', async () => {
         const created = await db.createNode('Job', {
           url: 'https://example.com/job/1',
@@ -157,7 +157,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
     });
 
-    describe('Conflict detection', async () => {
+    describe('Conflict detection', () => {
       it('should throw error when multiple nodes match', async () => {
         await db.createNode('Company', { industry: 'SaaS', name: 'Corp1' });
         await db.createNode('Company', { industry: 'SaaS', name: 'Corp2' });
@@ -197,7 +197,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
     });
 
-    describe('Edge cases', async () => {
+    describe('Edge cases', () => {
       it('should throw on invalid node type', async () => {
         await expect(db.mergeNode('', { name: 'Test' }, { name: 'Test' })).rejects.toThrow();
       });
@@ -228,7 +228,7 @@ describe('GraphDatabase - Merge Operations', async () => {
     });
   });
 
-  describe('mergeEdge()', async () => {
+  describe('mergeEdge()', () => {
     let jobId: number;
     let companyId: number;
 
@@ -237,7 +237,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       companyId = (await db.createNode('Company', { name: 'TechCorp' })).id;
     });
 
-    describe('Edge creation', async () => {
+    describe('Edge creation', () => {
       it('should create new edge when none exists', async () => {
         const result = await db.mergeEdge(
           jobId,
@@ -275,7 +275,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
     });
 
-    describe('Edge matching and update', async () => {
+    describe('Edge matching and update', () => {
       it('should find existing edge and apply onMatch properties', async () => {
         await db.createEdge(jobId, 'POSTED_BY', companyId, { status: 'draft' });
 
@@ -331,7 +331,7 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
     });
 
-    describe('Conflict detection', async () => {
+    describe('Conflict detection', () => {
       it('should throw when multiple edges exist with same type', async () => {
         await db.createEdge(jobId, 'SIMILAR_TO', companyId);
         await db.createEdge(jobId, 'SIMILAR_TO', companyId);
@@ -342,13 +342,13 @@ describe('GraphDatabase - Merge Operations', async () => {
       it('should not throw when only one edge matches', async () => {
         await db.createEdge(jobId, 'POSTED_BY', companyId);
 
-        expect(async () => {
-          await db.mergeEdge(jobId, 'POSTED_BY', companyId, { status: 'updated' });
-        }).not.toThrow();
+        await expect(
+          db.mergeEdge(jobId, 'POSTED_BY', companyId, { status: 'updated' })
+        ).resolves.toBeDefined();
       });
     });
 
-    describe('Edge cases', async () => {
+    describe('Edge cases', () => {
       it('should throw on invalid from node', async () => {
         await expect(db.mergeEdge(999999, 'POSTED_BY', companyId)).rejects.toThrow();
       });
@@ -363,8 +363,8 @@ describe('GraphDatabase - Merge Operations', async () => {
     });
   });
 
-  describe('Index Management', async () => {
-    describe('createPropertyIndex()', async () => {
+  describe('Index Management', () => {
+    describe('createPropertyIndex()', () => {
       it('should create single-property index', async () => {
         await db.createPropertyIndex('Job', 'url');
 
@@ -388,13 +388,11 @@ describe('GraphDatabase - Merge Operations', async () => {
       it('should be idempotent (no error on duplicate)', async () => {
         await db.createPropertyIndex('Job', 'url');
 
-        expect(async () => {
-          await db.createPropertyIndex('Job', 'url');
-        }).not.toThrow();
+        await expect(db.createPropertyIndex('Job', 'url')).resolves.toBeUndefined();
       });
     });
 
-    describe('dropIndex()', async () => {
+    describe('dropIndex()', () => {
       it('should drop existing index', async () => {
         await db.createPropertyIndex('Job', 'url');
         await db.dropIndex('idx_merge_Job_url');
@@ -406,13 +404,11 @@ describe('GraphDatabase - Merge Operations', async () => {
       });
 
       it('should be idempotent (no error if index does not exist)', async () => {
-        expect(async () => {
-          await db.dropIndex('idx_nonexistent');
-        }).not.toThrow();
+        await expect(db.dropIndex('idx_nonexistent')).resolves.toBeUndefined();
       });
     });
 
-    describe('listIndexes()', async () => {
+    describe('listIndexes()', () => {
       it('should list custom merge indexes', async () => {
         await db.createPropertyIndex('Job', 'url');
         await db.createPropertyIndex('Company', 'name');

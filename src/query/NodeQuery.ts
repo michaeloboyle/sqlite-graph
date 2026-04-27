@@ -280,9 +280,12 @@ export class NodeQuery {
   async first(): Promise<Node | null> {
     const original = this.limitValue;
     this.limitValue = 1;
-    const results = await this.exec();
-    this.limitValue = original;
-    return results.length > 0 ? results[0] : null;
+    try {
+      const results = await this.exec();
+      return results.length > 0 ? results[0] : null;
+    } finally {
+      this.limitValue = original;
+    }
   }
 
   /**

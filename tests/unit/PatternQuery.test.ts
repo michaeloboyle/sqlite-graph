@@ -8,7 +8,7 @@ import { GraphDatabase } from '../../src/core/Database';
 import { PatternQuery } from '../../src/query/PatternQuery';
 import { PatternError } from '../../src/types/pattern';
 
-describe('PatternQuery', async () => {
+describe('PatternQuery', () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
@@ -65,7 +65,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Simple 2-Hop Pattern', async () => {
+  describe('Simple 2-Hop Pattern', () => {
     beforeEach(async () => {
       // Create test data: Person -> WORKS_AT -> Company
       const person = await db.createNode('Person', { name: 'Alice', age: 30 });
@@ -110,7 +110,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Direction Handling', async () => {
+  describe('Direction Handling', () => {
     beforeEach(async () => {
       const job = await db.createNode('Job', { title: 'Engineer' });
       const company = await db.createNode('Company', { name: 'TechCorp' });
@@ -156,7 +156,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Filtering with where()', async () => {
+  describe('Filtering with where()', () => {
     beforeEach(async () => {
       await db.createNode('Person', { name: 'Alice', age: 25 });
       await db.createNode('Person', { name: 'Bob', age: 35 });
@@ -213,7 +213,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Variable Selection with select()', async () => {
+  describe('Variable Selection with select()', () => {
     beforeEach(async () => {
       const person = await db.createNode('Person', { name: 'Alice' });
       const company = await db.createNode('Company', { name: 'TechCorp' });
@@ -246,7 +246,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Pagination and Ordering', async () => {
+  describe('Pagination and Ordering', () => {
     beforeEach(async () => {
       for (let i = 1; i <= 10; i++) {
         await db.createNode('Person', { name: `Person${i}`, age: 20 + i });
@@ -291,7 +291,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Helper Methods', async () => {
+  describe('Helper Methods', () => {
     beforeEach(async () => {
       await db.createNode('Person', { name: 'Alice' });
       await db.createNode('Person', { name: 'Bob' });
@@ -333,7 +333,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Multi-Hop Patterns', async () => {
+  describe('Multi-Hop Patterns', () => {
     beforeEach(async () => {
       // Create: Person -> KNOWS -> Friend -> WORKS_AT -> Company
       const person = await db.createNode('Person', { name: 'Alice' });
@@ -362,7 +362,7 @@ describe('PatternQuery', async () => {
     });
   });
 
-  describe('Cyclic Patterns', async () => {
+  describe('Cyclic Patterns', () => {
     it('should detect mutual relationships', async () => {
       const alice = await db.createNode('Person', { name: 'Alice' });
       const bob = await db.createNode('Person', { name: 'Bob' });

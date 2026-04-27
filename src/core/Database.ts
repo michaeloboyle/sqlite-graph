@@ -3,6 +3,7 @@ import { initializeSchema } from './Schema';
 import { NodeQuery } from '../query/NodeQuery';
 import { TraversalQuery } from '../query/TraversalQuery';
 import { PatternQuery } from '../query/PatternQuery';
+import { GraphEntity } from '../types/pattern';
 import { TransactionContext } from './Transaction';
 import {
   Node,
@@ -1038,6 +1039,9 @@ export class GraphDatabase {
    * ```
    */
   async dropIndex(indexName: string): Promise<void> {
+    if (!/^[A-Za-z0-9_]+$/.test(indexName)) {
+      throw new Error(`Invalid index name: ${indexName}`);
+    }
     this.db.prepare(`DROP INDEX IF EXISTS ${indexName}`).run();
   }
 }

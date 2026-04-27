@@ -242,20 +242,16 @@ export class TraversalQuery {
       const node = this.getNode(nodeId);
       if (!node) continue;
 
-      // Apply filter
-      if (this.filterPredicate && !this.filterPredicate(node)) {
-        continue;
+      // Add to results if within depth range and passes filter (never include start node)
+      if (depth > 0) {
+        const passesFilter = !this.filterPredicate || this.filterPredicate(node);
+        const meetsMinDepth = this.minDepthValue === undefined || depth >= this.minDepthValue;
+        if (passesFilter && meetsMinDepth) {
+          results.push(node);
+        }
       }
 
-      // Add to results if within depth range
-      if (
-        (this.minDepthValue === undefined || depth >= this.minDepthValue) &&
-        depth > 0 // Don't include start node
-      ) {
-        results.push(node);
-      }
-
-      // Get neighbors based on traversal steps
+      // Always explore neighbors regardless of filter (filter only affects results)
       if (this.steps.length > 0) {
         const step = this.steps[Math.min(depth, this.steps.length - 1)];
         const neighbors = this.getNeighbors(nodeId, step);
@@ -531,15 +527,22 @@ export class TraversalQuery {
       }
     } else {
       // both directions
-      sql = `
-        SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
-        UNION
-        SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
-      `;
-      params.push(nodeId, step.edgeType);
       if (step.nodeType) {
-        sql += ` AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = id AND n.type = ?)`;
-        params.push(step.nodeType);
+        sql = `
+          SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
+          AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = e.to_id AND n.type = ?)
+          UNION
+          SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
+          AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = e.from_id AND n.type = ?)
+        `;
+        params.push(step.nodeType, nodeId, step.edgeType, step.nodeType);
+      } else {
+        sql = `
+          SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
+          UNION
+          SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
+        `;
+        params.push(nodeId, step.edgeType);
       }
     }
 

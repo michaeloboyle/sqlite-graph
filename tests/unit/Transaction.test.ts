@@ -3,7 +3,7 @@ import { GraphDatabase } from '../../src/core/Database';
 import { TransactionContext } from '../../src/core/Transaction';
 import * as fs from 'fs';
 
-describe('TransactionContext', async () => {
+describe('TransactionContext', () => {
   let db: GraphDatabase;
   const testDbPath = ':memory:';
 
@@ -15,7 +15,7 @@ describe('TransactionContext', async () => {
     await db.close();
   });
 
-  describe('Automatic commit/rollback', async () => {
+  describe('Automatic commit/rollback', () => {
     it('should automatically commit successful transactions', async () => {
       let contextReceived: TransactionContext | null = null;
 
@@ -44,7 +44,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Manual commit', async () => {
+  describe('Manual commit', () => {
     it('should allow manual commit with ctx.commit()', async () => {
       await db.transaction(async (ctx) => {
         await db.createNode('Job', { title: 'Job 1' });
@@ -73,7 +73,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Manual rollback', async () => {
+  describe('Manual rollback', () => {
     it('should allow manual rollback with ctx.rollback()', async () => {
       await db.transaction(async (ctx) => {
         await db.createNode('Job', { title: 'Job 1' });
@@ -102,7 +102,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Savepoints', async () => {
+  describe('Savepoints', () => {
     it('should create and rollback to savepoints', async () => {
       await db.transaction(async (ctx) => {
         await db.createNode('Job', { title: 'Job 1' });
@@ -169,7 +169,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Return values', async () => {
+  describe('Return values', () => {
     it('should return value from transaction function', async () => {
       const result = await db.transaction(async (ctx) => {
         const job = await db.createNode('Job', { title: 'Test Job' });
@@ -199,7 +199,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Error handling', async () => {
+  describe('Error handling', () => {
     it('should preserve original error message and stack', async () => {
       const originalError = new Error('Original error');
 
@@ -228,7 +228,7 @@ describe('TransactionContext', async () => {
     });
   });
 
-  describe('Edge cases', async () => {
+  describe('Edge cases', () => {
     it('should handle empty transaction', async () => {
       const result = await db.transaction(async (ctx) => {
         return 42;

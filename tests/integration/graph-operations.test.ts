@@ -6,7 +6,7 @@ import { GraphExport } from '../../src/types';
  * Integration tests for complex multi-step graph operations.
  * Tests combining CRUD, queries, traversals, transactions, and data export/import.
  */
-describe('Complex Graph Operations - Integration Tests', async () => {
+describe('Complex Graph Operations - Integration Tests', () => {
   let db: GraphDatabase;
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
     await db.close();
   });
 
-  describe('Multi-Step Graph Transformations', async () => {
+  describe('Multi-Step Graph Transformations', () => {
     it('should perform complex graph transformation with multiple operations', async () => {
       // Step 1: Create initial graph structure
       const nodes = {
@@ -38,8 +38,8 @@ describe('Complex Graph Operations - Integration Tests', async () => {
 
       // Step 3: Add metadata to all nodes
       await Promise.all(allNodes.map(async node => {
-        const outgoing = await db.traverse(node.id).out('LINKS_TO').toArray();
-        const incoming = await db.traverse(node.id).in('LINKS_TO').toArray();
+        const outgoing = await db.traverse(node.id).out('LINKS_TO').maxDepth(1).toArray();
+        const incoming = await db.traverse(node.id).in('LINKS_TO').maxDepth(1).toArray();
 
         await db.updateNode(node.id, {
           degree: outgoing.length + incoming.length,
@@ -62,15 +62,16 @@ describe('Complex Graph Operations - Integration Tests', async () => {
           .minDepth(2)
           .toArray();
 
-        twoHopNeighbors.forEach(async neighbor => {
+        await Promise.all(twoHopNeighbors.map(async neighbor => {
           // Create "indirect" relationship
           await db.createEdge(node.id, 'INDIRECT', neighbor.id, { hops: 2 });
-        });
+        }));
       }));
 
       // Step 6: Verify derived relationships
       const indirectFromA = await db.traverse(nodes.a.id)
         .out('INDIRECT')
+        .maxDepth(1)
         .toArray();
 
       expect(indirectFromA.length).toBeGreaterThan(0);
@@ -173,16 +174,23 @@ describe('Complex Graph Operations - Integration Tests', async () => {
       });
 
       // Find companies with high-paying jobs
-      const highPayCompanies = companies.filter(async company => {
+      const companyHighPayFlags = await Promise.all(companies.map(async company => {
         const companyJobs = await db.traverse(company.id).in('POSTED_BY').toArray();
-        return companyJobs.some(job => job.properties.salary >= 150000);
-      });
+        return {
+          company,
+          hasHighPayJob: companyJobs.some(job => job.properties.salary >= 150000)
+        };
+      }));
+
+      const highPayCompanies = companyHighPayFlags
+        .filter(({ hasHighPayJob }) => hasHighPayJob)
+        .map(({ company }) => company);
 
       expect(highPayCompanies.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Transaction Scenarios with Savepoints', async () => {
+  describe('Transaction Scenarios with Savepoints', () => {
     it('should handle partial rollback with savepoints', async () => {
       const result = await db.transaction(async ctx => {
         // Create first batch
@@ -262,22 +270,17 @@ describe('Complex Graph Operations - Integration Tests', async () => {
         const project = await db.createNode('Project', { name: 'Project A' });
         ctx.savepoint('project');
 
-        // Inner operation 1
-        db.transaction(async innerCtx => {
-          const task1 = await db.createNode('Task', { title: 'Task 1' });
-          await db.createEdge(task1.id, 'PART_OF', project.id);
-        });
-
+        // Inner operation 1 (using savepoints instead of nested transactions)
+        const task1 = await db.createNode('Task', { title: 'Task 1' });
+        await db.createEdge(task1.id, 'PART_OF', project.id);
         ctx.savepoint('task1');
 
         // Inner operation 2
-        db.transaction(async innerCtx => {
-          const task2 = await db.createNode('Task', { title: 'Task 2' });
-          await db.createEdge(task2.id, 'PART_OF', project.id);
-        });
+        const task2 = await db.createNode('Task', { title: 'Task 2' });
+        await db.createEdge(task2.id, 'PART_OF', project.id);
 
         // Verify both tasks exist
-        const tasks = await db.traverse(project.id).in('PART_OF').toArray();
+        const tasks = await db.traverse(project.id).in('PART_OF').maxDepth(1).toArray();
         expect(tasks).toHaveLength(2);
       });
 
@@ -311,7 +314,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
     });
   });
 
-  describe('Export and Import Operations', async () => {
+  describe('Export and Import Operations', () => {
     it('should export and import complete graph', async () => {
       // Create original graph
       const company = await db.createNode('Company', { name: 'TestCorp', size: 'medium' });
@@ -343,7 +346,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
       expect(importedJobs).toHaveLength(1);
 
       // Verify relationships
-      const jobCompanies = db2.traverse(importedJobs[0].id)
+      const jobCompanies = await db2.traverse(importedJobs[0].id)
         .out('POSTED_BY')
         .toArray();
       expect(jobCompanies).toHaveLength(1);
@@ -355,7 +358,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
       // Create larger graph
       const nodeCount = 100;
       const nodes = await Promise.all(Array.from({ length: nodeCount }, async (_, i) => await db.createNode('Node', { index: i, value: Math.random() })
-      );
+      ));
 
       // Create edges (each node connects to next 3)
       await Promise.all(nodes.map(async (node, i) => {
@@ -385,7 +388,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
 
       // Verify random node's connections
       const randomNode = importedNodes[Math.floor(Math.random() * nodeCount)];
-      const connections = db2.traverse(randomNode.id).out('LINKS').toArray();
+      const connections = await db2.traverse(randomNode.id).out('LINKS').maxDepth(1).toArray();
       expect(connections).toHaveLength(3);
 
       console.log(`Export/Import performance for 100 nodes:
@@ -461,7 +464,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
     });
   });
 
-  describe('Path Finding and Graph Algorithms', async () => {
+  describe('Path Finding and Graph Algorithms', () => {
     it('should find shortest path between nodes', async () => {
       // Create graph: A -> B -> C -> D
       //                \         /
@@ -501,21 +504,21 @@ describe('Complex Graph Operations - Integration Tests', async () => {
 
       // Traverse with cycle detection (limited depth)
       const visited = new Set();
-      const hasCycle = (nodeId: number, depth: number): boolean => {
+      const hasCycle = async (nodeId: number, depth: number): Promise<boolean> => {
         if (depth > 10) return true; // Exceeded reasonable depth
         if (visited.has(nodeId)) return true;
 
         visited.add(nodeId);
-        const neighbors = await db.traverse(nodeId).out('LINKS').toArray();
+        const neighbors = await db.traverse(nodeId).out('LINKS').maxDepth(1).toArray();
 
         for (const neighbor of neighbors) {
-          if (hasCycle(neighbor.id, depth + 1)) return true;
+          if (await hasCycle(neighbor.id, depth + 1)) return true;
         }
 
         return false;
       };
 
-      expect(hasCycle(a.id, 0)).toBe(true);
+      expect(await hasCycle(a.id, 0)).toBe(true);
     });
 
     it('should find all paths between nodes', async () => {
@@ -552,7 +555,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
       // Create star topology: Center connected to 5 outer nodes
       const center = await db.createNode('Node', { label: 'Center' });
       const outer = await Promise.all(Array.from({ length: 5 }, async (_, i) => await db.createNode('Node', { label: `Outer ${i}` })
-      );
+      ));
 
       await Promise.all(outer.map(async node => {
         await db.createEdge(center.id, 'LINKS', node.id);
@@ -561,9 +564,9 @@ describe('Complex Graph Operations - Integration Tests', async () => {
 
       // Calculate degree centrality
       const allNodes = await db.nodes('Node').exec();
-      const centrality = await Promise.all(allNodes.mapmap(async node => {
-        const outgoing = await db.traverse(node.id).out('LINKS').toArray();
-        const incoming = await db.traverse(node.id).in('LINKS').toArray();
+      const centrality = await Promise.all(allNodes.map(async node => {
+        const outgoing = await db.traverse(node.id).out('LINKS').maxDepth(1).toArray();
+        const incoming = await db.traverse(node.id).in('LINKS').maxDepth(1).toArray();
         return {
           label: node.properties.label,
           degree: outgoing.length + incoming.length
@@ -580,7 +583,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
     });
   });
 
-  describe('Data Integrity Under Stress', async () => {
+  describe('Data Integrity Under Stress', () => {
     it('should maintain consistency with rapid updates', async () => {
       const node = await db.createNode('Counter', { value: 0 });
 
@@ -599,15 +602,15 @@ describe('Complex Graph Operations - Integration Tests', async () => {
     it('should handle complex concurrent operations in transaction', async () => {
       await db.transaction(async () => {
         const nodes = await Promise.all(Array.from({ length: 10 }, async (_, i) => await db.createNode('Node', { index: i })
-        );
+        ));
 
         // Create all possible edges
         await Promise.all(nodes.map(async (from, i) => {
-          nodes.forEach(async (to, j) => {
+          await Promise.all(nodes.map(async (to, j) => {
             if (i !== j) {
               await db.createEdge(from.id, 'LINKS', to.id);
             }
-          });
+          }));
         }));
 
         // Query while still in transaction
@@ -616,7 +619,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
 
         // Each node should have 9 outgoing edges
         await Promise.all(nodes.map(async node => {
-          const outgoing = await db.traverse(node.id).out('LINKS').toArray();
+          const outgoing = await db.traverse(node.id).out('LINKS').maxDepth(1).toArray();
           expect(outgoing).toHaveLength(9);
         }));
       });
@@ -626,7 +629,7 @@ describe('Complex Graph Operations - Integration Tests', async () => {
       // Create graph with constraints
       const root = await db.createNode('Root', { value: 'root' });
       const children = await Promise.all(Array.from({ length: 5 }, async (_, i) => await db.createNode('Child', { value: `child-${i}`, parent: root.id })
-      );
+      ));
 
       await Promise.all(children.map(async child => {
         await db.createEdge(root.id, 'PARENT_OF', child.id);

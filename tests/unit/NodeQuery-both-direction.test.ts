@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { GraphDatabase } from '../../src/core/Database';
 
-describe('NodeQuery - Both Direction Support', async () => {
+describe('NodeQuery - Both Direction Support', () => {
   let db: GraphDatabase;
 
   beforeEach(async () => {

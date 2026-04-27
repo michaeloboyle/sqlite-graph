@@ -10,8 +10,8 @@
 import { GraphDatabase } from '../../src/core/Database';
 import { enableWAL, withRetry, WriteQueue } from '../../src/utils/concurrency';
 
-describe('Concurrency Utilities', async () => {
-  describe('enableWAL()', async () => {
+describe('Concurrency Utilities', () => {
+  describe('enableWAL()', () => {
     let db: GraphDatabase;
     let dbPath: string;
 
@@ -91,7 +91,7 @@ describe('Concurrency Utilities', async () => {
     });
   });
 
-  describe('withRetry()', async () => {
+  describe('withRetry()', () => {
     it('should execute operation successfully on first try', async () => {
       const operation = jest.fn(() => 'success');
 
@@ -226,7 +226,7 @@ describe('Concurrency Utilities', async () => {
     });
   });
 
-  describe('WriteQueue', async () => {
+  describe('WriteQueue', () => {
     let queue: WriteQueue;
     let db: GraphDatabase;
 
@@ -416,7 +416,7 @@ describe('Concurrency Utilities', async () => {
     });
   });
 
-  describe('Integration: Full concurrency stack', async () => {
+  describe('Integration: Full concurrency stack', () => {
     let db: GraphDatabase;
     let queue: WriteQueue;
 
