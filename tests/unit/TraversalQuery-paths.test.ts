@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { GraphDatabase } from '../../src/core/Database';
 
-describe('TraversalQuery - paths() wrapper', async () => {
+describe('TraversalQuery - paths() wrapper', () => {
   let db: GraphDatabase;
 
   beforeEach(async () => {
