@@ -8,13 +8,13 @@
  * ```typescript
  * import { GraphDatabase } from 'sqlite-graph';
  *
- * const db = new GraphDatabase('./graph.db');
+ * const db = await GraphDatabase.create('./graph.db');
  *
- * const job = db.createNode('Job', { title: 'Engineer', status: 'active' });
- * const company = db.createNode('Company', { name: 'TechCorp' });
- * db.createEdge(job.id, 'POSTED_BY', company.id);
+ * const job = await db.createNode('Job', { title: 'Engineer', status: 'active' });
+ * const company = await db.createNode('Company', { name: 'TechCorp' });
+ * await db.createEdge(job.id, 'POSTED_BY', company.id);
  *
- * const activeJobs = db.nodes('Job')
+ * const activeJobs = await db.nodes('Job')
  *   .where({ status: 'active' })
  *   .exec();
  * ```

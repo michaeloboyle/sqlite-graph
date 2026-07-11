@@ -216,7 +216,7 @@ export class TraversalQuery {
    * console.log(`Found ${nodes.length} similar jobs`);
    * ```
    */
-  toArray(): Node[] {
+  async toArray(): Promise<Node[]> {
     const visited = new Set<number>();
     const results: Node[] = [];
     const queue: Array<{ nodeId: number; depth: number }> = [
@@ -242,20 +242,16 @@ export class TraversalQuery {
       const node = this.getNode(nodeId);
       if (!node) continue;
 
-      // Apply filter
-      if (this.filterPredicate && !this.filterPredicate(node)) {
-        continue;
+      // Add to results if within depth range and passes filter (never include start node)
+      if (depth > 0) {
+        const passesFilter = !this.filterPredicate || this.filterPredicate(node);
+        const meetsMinDepth = this.minDepthValue === undefined || depth >= this.minDepthValue;
+        if (passesFilter && meetsMinDepth) {
+          results.push(node);
+        }
       }
 
-      // Add to results if within depth range
-      if (
-        (this.minDepthValue === undefined || depth >= this.minDepthValue) &&
-        depth > 0 // Don't include start node
-      ) {
-        results.push(node);
-      }
-
-      // Get neighbors based on traversal steps
+      // Always explore neighbors regardless of filter (filter only affects results)
       if (this.steps.length > 0) {
         const step = this.steps[Math.min(depth, this.steps.length - 1)];
         const neighbors = this.getNeighbors(nodeId, step);
@@ -286,7 +282,7 @@ export class TraversalQuery {
    * });
    * ```
    */
-  toPaths(): Node[][] {
+  async toPaths(): Promise<Node[][]> {
     const paths: Node[][] = [];
     const queue: Array<{ nodeId: number; path: Node[]; depth: number; visited: Set<number> }> = [
       { nodeId: this.startNodeId, path: [], depth: 0, visited: new Set() }
@@ -353,7 +349,7 @@ export class TraversalQuery {
    * }
    * ```
    */
-  shortestPath(targetNodeId: number): Node[] | null {
+  async shortestPath(targetNodeId: number): Promise<Node[] | null> {
     const visited = new Set<number>();
     const parent = new Map<number, number>();
     const queue: number[] = [this.startNodeId];
@@ -407,10 +403,10 @@ export class TraversalQuery {
    * const shortPaths = db.traverse(job1Id).paths(job2Id, { maxDepth: 3 });
    * ```
    */
-  paths(targetNodeId: number, options?: {
+  async paths(targetNodeId: number, options?: {
     maxPaths?: number;
     maxDepth?: number;
-  }): Node[][] {
+  }): Promise<Node[][]> {
     // Apply maxDepth if provided in options
     if (options?.maxDepth !== undefined) {
       this.maxDepth(options.maxDepth);
@@ -418,11 +414,11 @@ export class TraversalQuery {
 
     // Use allPaths if maxPaths is specified, otherwise use toPaths logic
     if (options?.maxPaths !== undefined) {
-      return this.allPaths(targetNodeId, options.maxPaths);
+      return await this.allPaths(targetNodeId, options.maxPaths);
     }
 
     // Filter toPaths() results to only include paths ending at target
-    const allPaths = this.toPaths();
+    const allPaths = await this.toPaths();
     return allPaths.filter(path =>
       path.length > 0 && path[path.length - 1].id === targetNodeId
     );
@@ -443,7 +439,7 @@ export class TraversalQuery {
    * console.log(`Found ${paths.length} paths`);
    * ```
    */
-  allPaths(targetNodeId: number, maxPaths: number = 10): Node[][] {
+  async allPaths(targetNodeId: number, maxPaths: number = 10): Promise<Node[][]> {
     const paths: Node[][] = [];
     const visited = new Set<number>();
 
@@ -531,15 +527,22 @@ export class TraversalQuery {
       }
     } else {
       // both directions
-      sql = `
-        SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
-        UNION
-        SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
-      `;
-      params.push(nodeId, step.edgeType);
       if (step.nodeType) {
-        sql += ` AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = id AND n.type = ?)`;
-        params.push(step.nodeType);
+        sql = `
+          SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
+          AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = e.to_id AND n.type = ?)
+          UNION
+          SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
+          AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = e.from_id AND n.type = ?)
+        `;
+        params.push(step.nodeType, nodeId, step.edgeType, step.nodeType);
+      } else {
+        sql = `
+          SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
+          UNION
+          SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
+        `;
+        params.push(nodeId, step.edgeType);
       }
     }
 

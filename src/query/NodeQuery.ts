@@ -238,7 +238,7 @@ export class NodeQuery {
    * console.log(`Found ${results.length} active jobs`);
    * ```
    */
-  exec(): Node[] {
+  async exec(): Promise<Node[]> {
     const sql = this.buildSQL();
     const params = this.buildParams();
 
@@ -277,12 +277,15 @@ export class NodeQuery {
    * }
    * ```
    */
-  first(): Node | null {
+  async first(): Promise<Node | null> {
     const original = this.limitValue;
     this.limitValue = 1;
-    const results = this.exec();
-    this.limitValue = original;
-    return results.length > 0 ? results[0] : null;
+    try {
+      const results = await this.exec();
+      return results.length > 0 ? results[0] : null;
+    } finally {
+      this.limitValue = original;
+    }
   }
 
   /**
@@ -299,7 +302,7 @@ export class NodeQuery {
    * console.log(`${count} active jobs`);
    * ```
    */
-  count(): number {
+  async count(): Promise<number> {
     const sql = this.buildSQL(true);
     const params = this.buildParams();
 
@@ -324,8 +327,8 @@ export class NodeQuery {
    * }
    * ```
    */
-  exists(): boolean {
-    return this.count() > 0;
+  async exists(): Promise<boolean> {
+    return (await this.count()) > 0;
   }
 
   /**

@@ -13,21 +13,21 @@ describe('Job Application Pipeline - Integration Tests', () => {
     db = new GraphDatabase(':memory:');
   });
 
-  afterEach(() => {
-    db.close();
+  afterEach(async () => {
+    await db.close();
   });
 
   describe('Complete Job Discovery to Application Workflow', () => {
-    it('should track complete job application lifecycle', () => {
+    it('should track complete job application lifecycle', async () => {
       // 1. Create companies
-      const techCorp = db.createNode('Company', {
+      const techCorp = await db.createNode('Company', {
         name: 'TechCorp',
         size: 'large',
         industry: 'Technology',
         location: 'San Francisco'
       });
 
-      const startupInc = db.createNode('Company', {
+      const startupInc = await db.createNode('Company', {
         name: 'Startup Inc',
         size: 'small',
         industry: 'Technology',
@@ -35,13 +35,13 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
 
       // 2. Create skills
-      const typescript = db.createNode('Skill', { name: 'TypeScript', category: 'programming' });
-      const react = db.createNode('Skill', { name: 'React', category: 'framework' });
-      const nodejs = db.createNode('Skill', { name: 'Node.js', category: 'runtime' });
-      const graphql = db.createNode('Skill', { name: 'GraphQL', category: 'api' });
+      const typescript = await db.createNode('Skill', { name: 'TypeScript', category: 'programming' });
+      const react = await db.createNode('Skill', { name: 'React', category: 'framework' });
+      const nodejs = await db.createNode('Skill', { name: 'Node.js', category: 'runtime' });
+      const graphql = await db.createNode('Skill', { name: 'GraphQL', category: 'api' });
 
       // 3. Create jobs with discovery metadata
-      const seniorJob = db.createNode('Job', {
+      const seniorJob = await db.createNode('Job', {
         title: 'Senior Full Stack Engineer',
         status: 'discovered',
         salary: { min: 150000, max: 200000 },
@@ -50,7 +50,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         discoveredAt: new Date().toISOString()
       });
 
-      const midLevelJob = db.createNode('Job', {
+      const midLevelJob = await db.createNode('Job', {
         title: 'Mid-Level Backend Engineer',
         status: 'discovered',
         salary: { min: 120000, max: 160000 },
@@ -60,19 +60,19 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
 
       // 4. Create relationships
-      db.createEdge(seniorJob.id, 'POSTED_BY', techCorp.id);
-      db.createEdge(midLevelJob.id, 'POSTED_BY', startupInc.id);
+      await db.createEdge(seniorJob.id, 'POSTED_BY', techCorp.id);
+      await db.createEdge(midLevelJob.id, 'POSTED_BY', startupInc.id);
 
-      db.createEdge(seniorJob.id, 'REQUIRES', typescript.id, { level: 'expert', required: true });
-      db.createEdge(seniorJob.id, 'REQUIRES', react.id, { level: 'expert', required: true });
-      db.createEdge(seniorJob.id, 'REQUIRES', nodejs.id, { level: 'advanced', required: true });
-      db.createEdge(seniorJob.id, 'REQUIRES', graphql.id, { level: 'intermediate', required: false });
+      await db.createEdge(seniorJob.id, 'REQUIRES', typescript.id, { level: 'expert', required: true });
+      await db.createEdge(seniorJob.id, 'REQUIRES', react.id, { level: 'expert', required: true });
+      await db.createEdge(seniorJob.id, 'REQUIRES', nodejs.id, { level: 'advanced', required: true });
+      await db.createEdge(seniorJob.id, 'REQUIRES', graphql.id, { level: 'intermediate', required: false });
 
-      db.createEdge(midLevelJob.id, 'REQUIRES', nodejs.id, { level: 'intermediate', required: true });
-      db.createEdge(midLevelJob.id, 'REQUIRES', graphql.id, { level: 'beginner', required: false });
+      await db.createEdge(midLevelJob.id, 'REQUIRES', nodejs.id, { level: 'intermediate', required: true });
+      await db.createEdge(midLevelJob.id, 'REQUIRES', graphql.id, { level: 'beginner', required: false });
 
       // 5. Query for suitable jobs (remote, good salary)
-      const discoveredJobs = db.nodes('Job')
+      const discoveredJobs = await db.nodes('Job')
         .where({ status: 'discovered' })
         .exec();
 
@@ -85,7 +85,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(suitableJobs[0].properties.title).toBe('Senior Full Stack Engineer');
 
       // 6. Update job status to 'interested'
-      const interestedJob = db.updateNode(seniorJob.id, {
+      const interestedJob = await db.updateNode(seniorJob.id, {
         status: 'interested',
         reviewedAt: new Date().toISOString(),
         notes: 'Great fit - strong TypeScript and React focus'
@@ -94,7 +94,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(interestedJob.properties.status).toBe('interested');
 
       // 7. Find company details for the interested job
-      const jobsWithCompanies = db.nodes('Job')
+      const jobsWithCompanies = await db.nodes('Job')
         .where({ status: 'interested' })
         .connectedTo('Company', 'POSTED_BY', 'out')
         .exec();
@@ -102,7 +102,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(jobsWithCompanies).toHaveLength(1);
 
       // 8. Get company information through traversal
-      const companyNodes = db.traverse(seniorJob.id)
+      const companyNodes = await db.traverse(seniorJob.id)
         .out('POSTED_BY')
         .toArray();
 
@@ -110,7 +110,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(companyNodes[0].properties.name).toBe('TechCorp');
 
       // 9. Get all required skills for this job
-      const requiredSkills = db.traverse(seniorJob.id)
+      const requiredSkills = await db.traverse(seniorJob.id)
         .out('REQUIRES')
         .toArray();
 
@@ -121,14 +121,14 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(skillNames).toContain('Node.js');
 
       // 10. Update to 'applied' status
-      db.updateNode(seniorJob.id, {
+      await db.updateNode(seniorJob.id, {
         status: 'applied',
         appliedAt: new Date().toISOString(),
         applicationMethod: 'direct_website'
       });
 
       // 11. Verify application tracking
-      const appliedJobs = db.nodes('Job')
+      const appliedJobs = await db.nodes('Job')
         .where({ status: 'applied' })
         .exec();
 
@@ -136,24 +136,24 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(appliedJobs[0].properties.applicationMethod).toBe('direct_website');
     });
 
-    it('should handle complete application rejection workflow', () => {
-      db.transaction(() => {
+    it('should handle complete application rejection workflow', async () => {
+      await db.transaction(async () => {
         // Create job and application
-        const company = db.createNode('Company', { name: 'RejectionCorp' });
-        const job = db.createNode('Job', {
+        const company = await db.createNode('Company', { name: 'RejectionCorp' });
+        const job = await db.createNode('Job', {
           title: 'Software Engineer',
           status: 'discovered'
         });
 
-        db.createEdge(job.id, 'POSTED_BY', company.id);
+        await db.createEdge(job.id, 'POSTED_BY', company.id);
 
         // Move through application stages
-        db.updateNode(job.id, { status: 'interested' });
-        db.updateNode(job.id, { status: 'applied', appliedAt: new Date().toISOString() });
-        db.updateNode(job.id, { status: 'interviewing', interviewStage: 'technical' });
+        await db.updateNode(job.id, { status: 'interested' });
+        await db.updateNode(job.id, { status: 'applied', appliedAt: new Date().toISOString() });
+        await db.updateNode(job.id, { status: 'interviewing', interviewStage: 'technical' });
 
         // Handle rejection
-        db.updateNode(job.id, {
+        await db.updateNode(job.id, {
           status: 'rejected',
           rejectedAt: new Date().toISOString(),
           rejectionReason: 'Not moving forward after technical round',
@@ -161,7 +161,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         });
 
         // Verify rejection tracking
-        const rejectedJobs = db.nodes('Job')
+        const rejectedJobs = await db.nodes('Job')
           .where({ status: 'rejected' })
           .exec();
 
@@ -171,7 +171,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
     });
 
-    it('should track multiple applications with different statuses', () => {
+    it('should track multiple applications with different statuses', async () => {
       // Create diverse job pipeline
       const jobs = [
         { title: 'Job A', status: 'discovered', salary: { min: 120000 } },
@@ -183,15 +183,15 @@ describe('Job Application Pipeline - Integration Tests', () => {
         { title: 'Job G', status: 'withdrawn', salary: { min: 125000 } }
       ];
 
-      const company = db.createNode('Company', { name: 'TestCorp' });
+      const company = await db.createNode('Company', { name: 'TestCorp' });
 
-      jobs.forEach(jobData => {
-        const job = db.createNode('Job', jobData);
-        db.createEdge(job.id, 'POSTED_BY', company.id);
-      });
+      await Promise.all(jobs.map(async jobData => {
+        const job = await db.createNode('Job', jobData);
+        await db.createEdge(job.id, 'POSTED_BY', company.id);
+      }));
 
       // Query active pipeline (not rejected/withdrawn)
-      const activePipeline = db.nodes('Job')
+      const activePipeline = await db.nodes('Job')
         .filter(node => {
           const status = node.properties.status;
           return status !== 'rejected' && status !== 'withdrawn';
@@ -201,12 +201,12 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(activePipeline).toHaveLength(5);
 
       // Query by specific stage
-      const interviewed = db.nodes('Job').where({ status: 'interviewing' }).exec();
+      const interviewed = await db.nodes('Job').where({ status: 'interviewing' }).exec();
       expect(interviewed).toHaveLength(1);
       expect(interviewed[0].properties.title).toBe('Job D');
 
       // Query high-value opportunities (>= 150k)
-      const highValue = db.nodes('Job')
+      const highValue = await db.nodes('Job')
         .filter(node => {
           const salary = node.properties.salary;
           return salary && salary.min >= 150000;
@@ -218,45 +218,46 @@ describe('Job Application Pipeline - Integration Tests', () => {
   });
 
   describe('Skill Matching and Job Discovery', () => {
-    it('should find jobs matching skill requirements', () => {
+    it('should find jobs matching skill requirements', async () => {
       // Create skills
-      const ts = db.createNode('Skill', { name: 'TypeScript' });
-      const react = db.createNode('Skill', { name: 'React' });
-      const python = db.createNode('Skill', { name: 'Python' });
-      const go = db.createNode('Skill', { name: 'Go' });
+      const ts = await db.createNode('Skill', { name: 'TypeScript' });
+      const react = await db.createNode('Skill', { name: 'React' });
+      const python = await db.createNode('Skill', { name: 'Python' });
+      const go = await db.createNode('Skill', { name: 'Go' });
 
       // Create jobs with different skill requirements
-      const frontendJob = db.createNode('Job', {
+      const frontendJob = await db.createNode('Job', {
         title: 'Frontend Engineer',
         status: 'active'
       });
-      db.createEdge(frontendJob.id, 'REQUIRES', ts.id);
-      db.createEdge(frontendJob.id, 'REQUIRES', react.id);
+      await db.createEdge(frontendJob.id, 'REQUIRES', ts.id);
+      await db.createEdge(frontendJob.id, 'REQUIRES', react.id);
 
-      const backendJob = db.createNode('Job', {
+      const backendJob = await db.createNode('Job', {
         title: 'Backend Engineer',
         status: 'active'
       });
-      db.createEdge(backendJob.id, 'REQUIRES', python.id);
-      db.createEdge(backendJob.id, 'REQUIRES', go.id);
+      await db.createEdge(backendJob.id, 'REQUIRES', python.id);
+      await db.createEdge(backendJob.id, 'REQUIRES', go.id);
 
-      const fullstackJob = db.createNode('Job', {
+      const fullstackJob = await db.createNode('Job', {
         title: 'Fullstack Engineer',
         status: 'active'
       });
-      db.createEdge(fullstackJob.id, 'REQUIRES', ts.id);
-      db.createEdge(fullstackJob.id, 'REQUIRES', react.id);
-      db.createEdge(fullstackJob.id, 'REQUIRES', python.id);
+      await db.createEdge(fullstackJob.id, 'REQUIRES', ts.id);
+      await db.createEdge(fullstackJob.id, 'REQUIRES', react.id);
+      await db.createEdge(fullstackJob.id, 'REQUIRES', python.id);
 
       // Find jobs requiring TypeScript - get all active jobs first, then filter by skills
-      const allActiveJobs = db.nodes('Job')
+      const allActiveJobs = await db.nodes('Job')
         .where({ status: 'active' })
         .exec();
 
-      const tsJobs = allActiveJobs.filter(job => {
-        const skills = db.traverse(job.id).out('REQUIRES').toArray();
+      const tsJobMatches = await Promise.all(allActiveJobs.map(async job => {
+        const skills = await db.traverse(job.id).out('REQUIRES').toArray();
         return skills.some(skill => skill.properties.name === 'TypeScript');
-      });
+      }));
+      const tsJobs = allActiveJobs.filter((_, index) => tsJobMatches[index]);
 
       expect(tsJobs).toHaveLength(2);
       const titles = tsJobs.map(j => j.properties.title).sort();
@@ -264,27 +265,26 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(titles).toContain('Fullstack Engineer');
     });
 
-    it('should calculate skill match percentage for jobs', () => {
+    it('should calculate skill match percentage for jobs', async () => {
       // My skills
       const mySkills = ['TypeScript', 'React', 'Node.js', 'PostgreSQL'];
-      const skillNodes = mySkills.map(name =>
-        db.createNode('Skill', { name, owned: true })
-      );
+      const skillNodes = await Promise.all(mySkills.map(async name => await db.createNode('Skill', { name, owned: true })
+      ));
 
       // Job requirements
-      const job = db.createNode('Job', {
+      const job = await db.createNode('Job', {
         title: 'Full Stack Engineer',
         status: 'active'
       });
 
-      db.createEdge(job.id, 'REQUIRES', skillNodes[0].id); // TypeScript
-      db.createEdge(job.id, 'REQUIRES', skillNodes[1].id); // React
-      db.createEdge(job.id, 'REQUIRES', skillNodes[2].id); // Node.js
-      db.createEdge(job.id, 'REQUIRES', db.createNode('Skill', { name: 'GraphQL' }).id);
-      db.createEdge(job.id, 'REQUIRES', db.createNode('Skill', { name: 'Docker' }).id);
+      await db.createEdge(job.id, 'REQUIRES', skillNodes[0].id); // TypeScript
+      await db.createEdge(job.id, 'REQUIRES', skillNodes[1].id); // React
+      await db.createEdge(job.id, 'REQUIRES', skillNodes[2].id); // Node.js
+      await db.createEdge(job.id, 'REQUIRES', (await db.createNode('Skill', { name: 'GraphQL' })).id);
+      await db.createEdge(job.id, 'REQUIRES', (await db.createNode('Skill', { name: 'Docker' })).id);
 
       // Calculate match percentage
-      const requiredSkills = db.traverse(job.id).out('REQUIRES').toArray();
+      const requiredSkills = await db.traverse(job.id).out('REQUIRES').toArray();
       const requiredSkillNames = requiredSkills.map(s => s.properties.name);
       const matchedSkills = mySkills.filter(skill => requiredSkillNames.includes(skill));
       const matchPercentage = (matchedSkills.length / requiredSkills.length) * 100;
@@ -295,8 +295,8 @@ describe('Job Application Pipeline - Integration Tests', () => {
   });
 
   describe('Company and Network Analysis', () => {
-    it('should analyze company job posting patterns', () => {
-      const company = db.createNode('Company', {
+    it('should analyze company job posting patterns', async () => {
+      const company = await db.createNode('Company', {
         name: 'BigTech Inc',
         size: 'large',
         industry: 'Technology'
@@ -311,20 +311,19 @@ describe('Job Application Pipeline - Integration Tests', () => {
         'Senior Backend Engineer'
       ];
 
-      const jobs = jobTitles.map(title =>
-        db.createNode('Job', {
+      const jobs = await Promise.all(jobTitles.map(async title => await db.createNode('Job', {
           title,
           status: 'active',
           postedAt: new Date().toISOString()
         })
-      );
+      ));
 
-      jobs.forEach(job => {
-        db.createEdge(job.id, 'POSTED_BY', company.id);
-      });
+      await Promise.all(jobs.map(async job => {
+        await db.createEdge(job.id, 'POSTED_BY', company.id);
+      }));
 
       // Analyze company's job postings
-      const companyJobs = db.traverse(company.id)
+      const companyJobs = await db.traverse(company.id)
         .in('POSTED_BY')
         .toArray();
 
@@ -338,32 +337,32 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(seniorCount).toBe(2);
     });
 
-    it('should find similar jobs through skill overlap', () => {
+    it('should find similar jobs through skill overlap', async () => {
       // Create skills
-      const ts = db.createNode('Skill', { name: 'TypeScript' });
-      const react = db.createNode('Skill', { name: 'React' });
-      const node = db.createNode('Skill', { name: 'Node.js' });
-      const python = db.createNode('Skill', { name: 'Python' });
+      const ts = await db.createNode('Skill', { name: 'TypeScript' });
+      const react = await db.createNode('Skill', { name: 'React' });
+      const node = await db.createNode('Skill', { name: 'Node.js' });
+      const python = await db.createNode('Skill', { name: 'Python' });
 
       // Create jobs with overlapping skills
-      const job1 = db.createNode('Job', { title: 'Job 1', status: 'active' });
-      db.createEdge(job1.id, 'REQUIRES', ts.id);
-      db.createEdge(job1.id, 'REQUIRES', react.id);
-      db.createEdge(job1.id, 'REQUIRES', node.id);
+      const job1 = await db.createNode('Job', { title: 'Job 1', status: 'active' });
+      await db.createEdge(job1.id, 'REQUIRES', ts.id);
+      await db.createEdge(job1.id, 'REQUIRES', react.id);
+      await db.createEdge(job1.id, 'REQUIRES', node.id);
 
-      const job2 = db.createNode('Job', { title: 'Job 2', status: 'active' });
-      db.createEdge(job2.id, 'REQUIRES', ts.id);
-      db.createEdge(job2.id, 'REQUIRES', react.id);
-      db.createEdge(job2.id, 'REQUIRES', python.id);
+      const job2 = await db.createNode('Job', { title: 'Job 2', status: 'active' });
+      await db.createEdge(job2.id, 'REQUIRES', ts.id);
+      await db.createEdge(job2.id, 'REQUIRES', react.id);
+      await db.createEdge(job2.id, 'REQUIRES', python.id);
 
-      const job3 = db.createNode('Job', { title: 'Job 3', status: 'active' });
-      db.createEdge(job3.id, 'REQUIRES', python.id);
+      const job3 = await db.createNode('Job', { title: 'Job 3', status: 'active' });
+      await db.createEdge(job3.id, 'REQUIRES', python.id);
 
       // Add explicit similarity relationship
-      db.createEdge(job1.id, 'SIMILAR_TO', job2.id, { reason: 'skill_overlap', similarity: 0.8 });
+      await db.createEdge(job1.id, 'SIMILAR_TO', job2.id, { reason: 'skill_overlap', similarity: 0.8 });
 
       // Find similar jobs
-      const similarJobs = db.traverse(job1.id)
+      const similarJobs = await db.traverse(job1.id)
         .out('SIMILAR_TO')
         .toArray();
 
@@ -371,8 +370,8 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(similarJobs[0].properties.title).toBe('Job 2');
 
       // Calculate skill overlap programmatically
-      const job1Skills = db.traverse(job1.id).out('REQUIRES').toArray();
-      const job2Skills = db.traverse(job2.id).out('REQUIRES').toArray();
+      const job1Skills = await db.traverse(job1.id).out('REQUIRES').toArray();
+      const job2Skills = await db.traverse(job2.id).out('REQUIRES').toArray();
 
       const job1SkillNames = new Set(job1Skills.map(s => s.properties.name));
       const job2SkillNames = new Set(job2Skills.map(s => s.properties.name));
@@ -383,18 +382,18 @@ describe('Job Application Pipeline - Integration Tests', () => {
   });
 
   describe('Interview and Offer Management', () => {
-    it('should track interview pipeline with multiple rounds', () => {
-      const company = db.createNode('Company', { name: 'InterviewCorp' });
-      const job = db.createNode('Job', {
+    it('should track interview pipeline with multiple rounds', async () => {
+      const company = await db.createNode('Company', { name: 'InterviewCorp' });
+      const job = await db.createNode('Job', {
         title: 'Senior Engineer',
         status: 'applied',
         appliedAt: new Date('2025-01-01').toISOString()
       });
 
-      db.createEdge(job.id, 'POSTED_BY', company.id);
+      await db.createEdge(job.id, 'POSTED_BY', company.id);
 
       // Create interview rounds as separate nodes
-      const screening = db.createNode('Interview', {
+      const screening = await db.createNode('Interview', {
         round: 'screening',
         date: new Date('2025-01-15').toISOString(),
         duration: 30,
@@ -402,7 +401,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         outcome: 'passed'
       });
 
-      const technical = db.createNode('Interview', {
+      const technical = await db.createNode('Interview', {
         round: 'technical',
         date: new Date('2025-01-22').toISOString(),
         duration: 60,
@@ -410,7 +409,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         outcome: 'passed'
       });
 
-      const behavioral = db.createNode('Interview', {
+      const behavioral = await db.createNode('Interview', {
         round: 'behavioral',
         date: new Date('2025-01-29').toISOString(),
         duration: 45,
@@ -418,7 +417,7 @@ describe('Job Application Pipeline - Integration Tests', () => {
         outcome: 'passed'
       });
 
-      const onsite = db.createNode('Interview', {
+      const onsite = await db.createNode('Interview', {
         round: 'onsite',
         date: new Date('2025-02-05').toISOString(),
         duration: 240,
@@ -427,16 +426,16 @@ describe('Job Application Pipeline - Integration Tests', () => {
       });
 
       // Link interviews to job
-      db.createEdge(job.id, 'HAS_INTERVIEW', screening.id, { sequence: 1 });
-      db.createEdge(job.id, 'HAS_INTERVIEW', technical.id, { sequence: 2 });
-      db.createEdge(job.id, 'HAS_INTERVIEW', behavioral.id, { sequence: 3 });
-      db.createEdge(job.id, 'HAS_INTERVIEW', onsite.id, { sequence: 4 });
+      await db.createEdge(job.id, 'HAS_INTERVIEW', screening.id, { sequence: 1 });
+      await db.createEdge(job.id, 'HAS_INTERVIEW', technical.id, { sequence: 2 });
+      await db.createEdge(job.id, 'HAS_INTERVIEW', behavioral.id, { sequence: 3 });
+      await db.createEdge(job.id, 'HAS_INTERVIEW', onsite.id, { sequence: 4 });
 
       // Update job status
-      db.updateNode(job.id, { status: 'interviewing', currentRound: 'onsite' });
+      await db.updateNode(job.id, { status: 'interviewing', currentRound: 'onsite' });
 
       // Query all interviews for this job
-      const interviews = db.traverse(job.id)
+      const interviews = await db.traverse(job.id)
         .out('HAS_INTERVIEW')
         .toArray();
 
@@ -451,17 +450,17 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(totalMinutes).toBe(375);
     });
 
-    it('should manage offer negotiation workflow', () => {
-      const company = db.createNode('Company', { name: 'OfferCorp' });
-      const job = db.createNode('Job', {
+    it('should manage offer negotiation workflow', async () => {
+      const company = await db.createNode('Company', { name: 'OfferCorp' });
+      const job = await db.createNode('Job', {
         title: 'Principal Engineer',
         status: 'interviewing'
       });
 
-      db.createEdge(job.id, 'POSTED_BY', company.id);
+      await db.createEdge(job.id, 'POSTED_BY', company.id);
 
       // Create offer node
-      const offer = db.createNode('Offer', {
+      const offer = await db.createNode('Offer', {
         baseSalary: 200000,
         bonus: 50000,
         equity: { type: 'RSU', amount: 100000, vestingYears: 4 },
@@ -470,32 +469,32 @@ describe('Job Application Pipeline - Integration Tests', () => {
         deadline: new Date('2025-02-20').toISOString()
       });
 
-      db.createEdge(job.id, 'RECEIVED_OFFER', offer.id);
+      await db.createEdge(job.id, 'RECEIVED_OFFER', offer.id);
 
       // Update job status
-      db.updateNode(job.id, {
+      await db.updateNode(job.id, {
         status: 'offered',
         offeredAt: new Date().toISOString()
       });
 
       // Create counter-offer
-      const counter = db.createNode('CounterOffer', {
+      const counter = await db.createNode('CounterOffer', {
         baseSalary: 220000,
         bonus: 60000,
         equity: { type: 'RSU', amount: 120000, vestingYears: 4 },
         reasoning: 'Market rate for Principal Engineer with 10+ years experience'
       });
 
-      db.createEdge(offer.id, 'COUNTERED_WITH', counter.id);
+      await db.createEdge(offer.id, 'COUNTERED_WITH', counter.id);
 
       // Verify offer chain
-      const offers = db.traverse(job.id)
+      const offers = await db.traverse(job.id)
         .out('RECEIVED_OFFER')
         .toArray();
 
       expect(offers).toHaveLength(1);
 
-      const counterOffers = db.traverse(offers[0].id)
+      const counterOffers = await db.traverse(offers[0].id)
         .out('COUNTERED_WITH')
         .toArray();
 
@@ -505,20 +504,20 @@ describe('Job Application Pipeline - Integration Tests', () => {
   });
 
   describe('Data Integrity and Consistency', () => {
-    it('should maintain referential integrity when deleting jobs', () => {
-      const company = db.createNode('Company', { name: 'TestCorp' });
-      const job = db.createNode('Job', { title: 'Test Job' });
-      const skill = db.createNode('Skill', { name: 'Testing' });
+    it('should maintain referential integrity when deleting jobs', async () => {
+      const company = await db.createNode('Company', { name: 'TestCorp' });
+      const job = await db.createNode('Job', { title: 'Test Job' });
+      const skill = await db.createNode('Skill', { name: 'Testing' });
 
-      db.createEdge(job.id, 'POSTED_BY', company.id);
-      db.createEdge(job.id, 'REQUIRES', skill.id);
+      await db.createEdge(job.id, 'POSTED_BY', company.id);
+      await db.createEdge(job.id, 'REQUIRES', skill.id);
 
       // Delete job (edges should be automatically deleted via CASCADE)
-      const deleted = db.deleteNode(job.id);
+      const deleted = await db.deleteNode(job.id);
       expect(deleted).toBe(true);
 
       // Verify job is gone
-      const retrievedJob = db.getNode(job.id);
+      const retrievedJob = await db.getNode(job.id);
       expect(retrievedJob).toBeNull();
 
       // Verify company and skill still exist
@@ -526,93 +525,91 @@ describe('Job Application Pipeline - Integration Tests', () => {
       expect(db.getNode(skill.id)).not.toBeNull();
 
       // Verify edges are gone
-      const companyJobs = db.traverse(company.id).in('POSTED_BY').toArray();
+      const companyJobs = await db.traverse(company.id).in('POSTED_BY').toArray();
       expect(companyJobs).toHaveLength(0);
     });
 
-    it('should handle concurrent status updates correctly', () => {
-      const job = db.createNode('Job', {
+    it('should handle concurrent status updates correctly', async () => {
+      const job = await db.createNode('Job', {
         title: 'Concurrent Test',
         status: 'discovered'
       });
 
       // Simulate rapid status updates
-      db.transaction(() => {
-        db.updateNode(job.id, { status: 'interested' });
-        db.updateNode(job.id, { status: 'applied' });
-        db.updateNode(job.id, { status: 'interviewing' });
+      await db.transaction(async () => {
+        await db.updateNode(job.id, { status: 'interested' });
+        await db.updateNode(job.id, { status: 'applied' });
+        await db.updateNode(job.id, { status: 'interviewing' });
       });
 
-      const finalJob = db.getNode(job.id);
+      const finalJob = await db.getNode(job.id);
       expect(finalJob?.properties.status).toBe('interviewing');
     });
 
-    it('should validate complex relationship constraints', () => {
-      const company1 = db.createNode('Company', { name: 'Company 1' });
-      const company2 = db.createNode('Company', { name: 'Company 2' });
-      const job = db.createNode('Job', { title: 'Multi-Company Job' });
+    it('should validate complex relationship constraints', async () => {
+      const company1 = await db.createNode('Company', { name: 'Company 1' });
+      const company2 = await db.createNode('Company', { name: 'Company 2' });
+      const job = await db.createNode('Job', { title: 'Multi-Company Job' });
 
       // Job can only be posted by one company (business logic, not enforced by DB)
-      db.createEdge(job.id, 'POSTED_BY', company1.id);
+      await db.createEdge(job.id, 'POSTED_BY', company1.id);
 
       // This would violate business logic - should be prevented by application layer
       // For this test, we just verify the database allows it but application should prevent
-      db.createEdge(job.id, 'POSTED_BY', company2.id);
+      await db.createEdge(job.id, 'POSTED_BY', company2.id);
 
-      const companies = db.traverse(job.id).out('POSTED_BY').toArray();
+      const companies = await db.traverse(job.id).out('POSTED_BY').toArray();
       // Database allows multiple edges, but application should enforce single company
       expect(companies.length).toBeGreaterThan(0);
     });
   });
 
   describe('Performance with Realistic Data Volumes', () => {
-    it('should handle 100+ jobs efficiently', () => {
+    it('should handle 100+ jobs efficiently', async () => {
       const startTime = Date.now();
 
       // Create companies
-      const companies = Array.from({ length: 20 }, (_, i) =>
-        db.createNode('Company', {
+      const companies = await Promise.all(Array.from({ length: 20 }, async (_, i) => await db.createNode('Company', {
           name: `Company ${i}`,
           size: i % 3 === 0 ? 'large' : i % 3 === 1 ? 'medium' : 'small'
         })
-      );
+      ));
 
       // Create skills
-      const skills = ['TypeScript', 'React', 'Node.js', 'Python', 'Go', 'Rust', 'Java', 'C++'].map(
-        name => db.createNode('Skill', { name })
-      );
+      const skills = await Promise.all(['TypeScript', 'React', 'Node.js', 'Python', 'Go', 'Rust', 'Java', 'C++'].map(
+        async name => await db.createNode('Skill', { name })
+      ));
 
       // Create 100 jobs
-      const jobs = Array.from({ length: 100 }, (_, i) =>
-        db.createNode('Job', {
+      const jobs = await Promise.all(Array.from({ length: 100 }, async (_, i) => await db.createNode('Job', {
           title: `Job ${i}`,
           status: ['discovered', 'interested', 'applied', 'interviewing'][i % 4],
           salary: { min: 100000 + i * 1000, max: 150000 + i * 1000 },
           remote: i % 2 === 0
         })
-      );
+      ));
 
       // Create relationships
-      jobs.forEach((job, i) => {
+      await Promise.all(jobs.map(async (job, i) => {
         const company = companies[i % companies.length];
-        db.createEdge(job.id, 'POSTED_BY', company.id);
+        await db.createEdge(job.id, 'POSTED_BY', company.id);
 
         // Add 2-4 skills per job
         const skillCount = 2 + (i % 3);
         for (let j = 0; j < skillCount; j++) {
           const skill = skills[(i + j) % skills.length];
-          db.createEdge(job.id, 'REQUIRES', skill.id);
+          await db.createEdge(job.id, 'REQUIRES', skill.id);
         }
-      });
+      }));
 
       const setupTime = Date.now() - startTime;
 
       // Query performance
       const queryStart = Date.now();
-      const activeJobs = db.nodes('Job')
+      const activeJobs = await db.nodes('Job')
         .where({ status: 'active' })
         .exec();
-      const allJobs = db.nodes('Job').exec();
+      const allJobs = await db.nodes('Job').exec();
       const remoteJobs = allJobs.filter(j => j.properties.remote === true);
       const highPayJobs = allJobs.filter(node => {
         const salary = node.properties.salary;
@@ -622,10 +619,10 @@ describe('Job Application Pipeline - Integration Tests', () => {
 
       // Traversal performance
       const traversalStart = Date.now();
-      jobs.slice(0, 10).forEach(job => {
-        db.traverse(job.id).out('POSTED_BY').toArray();
-        db.traverse(job.id).out('REQUIRES').toArray();
-      });
+      await Promise.all(jobs.slice(0, 10).map(async job => {
+        await db.traverse(job.id).out('POSTED_BY').toArray();
+        await db.traverse(job.id).out('REQUIRES').toArray();
+      }));
       const traversalTime = Date.now() - traversalStart;
 
       // Assertions

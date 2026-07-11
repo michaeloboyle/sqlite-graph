@@ -21,8 +21,8 @@ describe('Concurrency Utilities', () => {
       db = new GraphDatabase(dbPath);
     });
 
-    afterEach(() => {
-      db.close();
+    afterEach(async () => {
+      await db.close();
       // Clean up temp file
       try {
         require('fs').unlinkSync(dbPath);
@@ -235,8 +235,8 @@ describe('Concurrency Utilities', () => {
       db = new GraphDatabase(':memory:');
     });
 
-    afterEach(() => {
-      db.close();
+    afterEach(async () => {
+      await db.close();
     });
 
     it('should execute single operation', async () => {
@@ -249,10 +249,10 @@ describe('Concurrency Utilities', () => {
     });
 
     it('should return operation result', async () => {
-      const node = db.createNode('Test', { value: 42 });
+      const node = await db.createNode('Test', { value: 42 });
 
-      const result = await queue.enqueue(() => {
-        return db.getNode(node.id);
+      const result = await queue.enqueue(async () => {
+        return await db.getNode(node.id);
       });
 
       expect(result?.id).toBe(node.id);
@@ -322,7 +322,7 @@ describe('Concurrency Utilities', () => {
       enableWAL(db);
 
       const writes = Array.from({ length: 100 }, (_, i) =>
-        queue.enqueue(() => db.createNode('Job', { index: i }))
+        queue.enqueue(async () => await db.createNode('Job', { index: i }))
       );
 
       const nodes = await Promise.all(writes);
@@ -331,7 +331,7 @@ describe('Concurrency Utilities', () => {
       expect(new Set(nodes.map(n => n.id)).size).toBe(100); // All unique IDs
 
       // Verify all nodes were created
-      const allNodes = db.nodes('Job').exec();
+      const allNodes = await db.nodes('Job').exec();
       expect(allNodes).toHaveLength(100);
     });
 
@@ -426,16 +426,15 @@ describe('Concurrency Utilities', () => {
       queue = new WriteQueue();
     });
 
-    afterEach(() => {
-      db.close();
+    afterEach(async () => {
+      await db.close();
     });
 
     it('should combine WAL + retry + queue for safe concurrent writes', async () => {
       // Simulate high-concurrency scenario
       const writes = Array.from({ length: 50 }, (_, i) =>
         queue.enqueue(() =>
-          withRetry(() =>
-            db.mergeNode('Job', { url: `https://example.com/job/${i}` } as any, { title: `Job ${i}` } as any)
+          withRetry(async () => await db.mergeNode('Job', { url: `https://example.com/job/${i}` } as any, { title: `Job ${i}` } as any)
           )
         )
       );
@@ -446,21 +445,20 @@ describe('Concurrency Utilities', () => {
       expect(results.every(r => r.created)).toBe(true);
 
       // Verify all nodes exist
-      const nodes = db.nodes('Job').exec();
+      const nodes = await db.nodes('Job').exec();
       expect(nodes).toHaveLength(50);
     });
 
     it('should handle merge conflicts gracefully', async () => {
-      db.createPropertyIndex('Job', 'url');
+      await db.createPropertyIndex('Job', 'url');
 
       // Create initial node
-      db.createNode('Job', { url: 'https://example.com/job/1', title: 'Original' });
+      await db.createNode('Job', { url: 'https://example.com/job/1', title: 'Original' });
 
       // Multiple concurrent merges of same node
       const merges = Array.from({ length: 10 }, (_, i) =>
         queue.enqueue(() =>
-          withRetry(() =>
-            db.mergeNode(
+          withRetry(async () => await db.mergeNode(
               'Job',
               { url: 'https://example.com/job/1' } as any,
               undefined,
@@ -477,22 +475,20 @@ describe('Concurrency Utilities', () => {
       expect(results.every(r => r.node.id === results[0].node.id)).toBe(true);
 
       // Final viewCount should be from last merge
-      const final = db.getNode(results[0].node.id);
+      const final = await db.getNode(results[0].node.id);
       expect((final?.properties as any).viewCount).toBe(9);
     });
 
     it('should maintain data consistency under load', async () => {
       // Create nodes with edges in high-concurrency scenario
-      const companyNode = db.createNode('Company', { name: 'TechCorp' });
+      const companyNode = await db.createNode('Company', { name: 'TechCorp' });
 
       const operations = Array.from({ length: 100 }, (_, i) =>
         queue.enqueue(async () => {
-          const job = await withRetry(() =>
-            db.createNode('Job', { title: `Job ${i}` })
+          const job = await withRetry(async () => await db.createNode('Job', { title: `Job ${i}` })
           );
 
-          await withRetry(() =>
-            db.createEdge(job.id, 'POSTED_BY', companyNode.id)
+          await withRetry(async () => await db.createEdge(job.id, 'POSTED_BY', companyNode.id)
           );
 
           return job;
@@ -504,7 +500,7 @@ describe('Concurrency Utilities', () => {
       // Verify data integrity
       expect(jobs).toHaveLength(100);
 
-      const allJobs = db.nodes('Job').exec();
+      const allJobs = await db.nodes('Job').exec();
       expect(allJobs).toHaveLength(100);
 
       // Count edges using SQL

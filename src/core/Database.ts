@@ -3,6 +3,7 @@ import { initializeSchema } from './Schema';
 import { NodeQuery } from '../query/NodeQuery';
 import { TraversalQuery } from '../query/TraversalQuery';
 import { PatternQuery } from '../query/PatternQuery';
+import { GraphEntity } from '../types/pattern';
 import { TransactionContext } from './Transaction';
 import {
   Node,
@@ -109,6 +110,42 @@ export class GraphDatabase {
   }
 
   /**
+   * Async factory method for creating a GraphDatabase instance.
+   * Preferred over the constructor for async-first code.
+   *
+   * @param path - Path to SQLite database file. Use ':memory:' for in-memory database.
+   * @param options - Database configuration options
+   * @returns A Promise resolving to a new GraphDatabase instance
+   *
+   * @example
+   * ```typescript
+   * const db = await GraphDatabase.create('./graph.db');
+   * ```
+   */
+  static async create(path: string, options?: DatabaseOptions): Promise<GraphDatabase> {
+    return new GraphDatabase(path, options);
+  }
+
+  /**
+   * Get a node by ID synchronously (internal helper).
+   * @private
+   */
+  private _getNodeSync(id: number): Node | null {
+    const stmt = this.preparedStatements.get('getNode')!;
+    const row = stmt.get(id) as any;
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      type: row.type,
+      properties: deserialize(row.properties),
+      createdAt: timestampToDate(row.created_at),
+      updatedAt: timestampToDate(row.updated_at)
+    };
+  }
+
+  /**
    * Prepare frequently used SQL statements for better performance.
    * @private
    */
@@ -172,7 +209,7 @@ export class GraphDatabase {
    * console.log(job.createdAt); // 2025-10-27T...
    * ```
    */
-  createNode<T extends NodeData = NodeData>(type: string, properties: T): Node<T> {
+  async createNode<T extends NodeData = NodeData>(type: string, properties: T): Promise<Node<T>> {
     validateNodeType(type, this.schema);
     validateNodeProperties(type, properties, this.schema);
 
@@ -204,7 +241,7 @@ export class GraphDatabase {
    * }
    * ```
    */
-  getNode(id: number): Node | null {
+  async getNode(id: number): Promise<Node | null> {
     validateNodeId(id);
 
     const stmt = this.preparedStatements.get('getNode')!;
@@ -239,10 +276,10 @@ export class GraphDatabase {
    * });
    * ```
    */
-  updateNode(id: number, properties: Partial<NodeData>): Node {
+  async updateNode(id: number, properties: Partial<NodeData>): Promise<Node> {
     validateNodeId(id);
 
-    const existing = this.getNode(id);
+    const existing = this._getNodeSync(id);
     if (!existing) {
       throw new Error(`Node with ID ${id} not found`);
     }
@@ -274,7 +311,7 @@ export class GraphDatabase {
    * console.log(deleted ? 'Deleted' : 'Not found');
    * ```
    */
-  deleteNode(id: number): boolean {
+  async deleteNode(id: number): Promise<boolean> {
     validateNodeId(id);
 
     const stmt = this.preparedStatements.get('deleteNode')!;
@@ -305,19 +342,19 @@ export class GraphDatabase {
    * });
    * ```
    */
-  createEdge<T extends NodeData = NodeData>(
+  async createEdge<T extends NodeData = NodeData>(
     from: number,
     type: string,
     to: number,
     properties?: T
-  ): Edge<T> {
+  ): Promise<Edge<T>> {
     validateEdgeType(type, this.schema);
     validateNodeId(from);
     validateNodeId(to);
 
     // Verify nodes exist
-    const fromNode = this.getNode(from);
-    const toNode = this.getNode(to);
+    const fromNode = this._getNodeSync(from);
+    const toNode = this._getNodeSync(to);
 
     if (!fromNode) {
       throw new Error(`Source node with ID ${from} not found`);
@@ -358,7 +395,7 @@ export class GraphDatabase {
    * }
    * ```
    */
-  getEdge(id: number): Edge | null {
+  async getEdge(id: number): Promise<Edge | null> {
     validateNodeId(id);
 
     const stmt = this.preparedStatements.get('getEdge')!;
@@ -387,7 +424,7 @@ export class GraphDatabase {
    * const deleted = db.deleteEdge(1);
    * ```
    */
-  deleteEdge(id: number): boolean {
+  async deleteEdge(id: number): Promise<boolean> {
     validateNodeId(id);
 
     const stmt = this.preparedStatements.get('deleteEdge')!;
@@ -439,7 +476,7 @@ export class GraphDatabase {
   traverse(startNodeId: number): TraversalQuery {
     validateNodeId(startNodeId);
 
-    const node = this.getNode(startNodeId);
+    const node = this.db.prepare('SELECT id FROM nodes WHERE id = ?').get(startNodeId);
     if (!node) {
       throw new Error(`Start node with ID ${startNodeId} not found`);
     }
@@ -468,7 +505,7 @@ export class GraphDatabase {
    *   .exec();
    * ```
    */
-  pattern<T extends Record<string, unknown> = Record<string, unknown>>(): PatternQuery<T> {
+  pattern<T extends Record<string, GraphEntity> = Record<string, GraphEntity>>(): PatternQuery<T> {
     return new PatternQuery<T>(this.db);
   }
 
@@ -505,14 +542,14 @@ export class GraphDatabase {
    * });
    * ```
    */
-  transaction<T>(fn: (ctx: TransactionContext) => T): T {
+  async transaction<T>(fn: (ctx: TransactionContext) => T | Promise<T>): Promise<T> {
     // Start transaction
     this.db.prepare('BEGIN').run();
 
     const ctx = new TransactionContext(this.db);
 
     try {
-      const result = fn(ctx);
+      const result = await fn(ctx);
 
       // Auto-commit if not manually finalized
       if (!ctx.isFinalized()) {
@@ -540,7 +577,7 @@ export class GraphDatabase {
    * fs.writeFileSync('graph-backup.json', JSON.stringify(data, null, 2));
    * ```
    */
-  export(): GraphExport {
+  async export(): Promise<GraphExport> {
     const nodesStmt = this.db.prepare('SELECT * FROM nodes ORDER BY id');
     const edgesStmt = this.db.prepare('SELECT * FROM edges ORDER BY id');
 
@@ -585,14 +622,14 @@ export class GraphDatabase {
    * db.import(data);
    * ```
    */
-  import(data: GraphExport): void {
-    this.transaction(() => {
+  async import(data: GraphExport): Promise<void> {
+    await this.transaction(async () => {
       for (const node of data.nodes) {
-        this.createNode(node.type, node.properties);
+        await this.createNode(node.type, node.properties);
       }
 
       for (const edge of data.edges) {
-        this.createEdge(edge.from, edge.type, edge.to, edge.properties);
+        await this.createEdge(edge.from, edge.type, edge.to, edge.properties);
       }
     });
   }
@@ -606,7 +643,7 @@ export class GraphDatabase {
    * db.close();
    * ```
    */
-  close(): void {
+  async close(): Promise<void> {
     this.db.close();
   }
 
@@ -654,12 +691,12 @@ export class GraphDatabase {
    * );
    * ```
    */
-  mergeNode<T extends NodeData = NodeData>(
+  async mergeNode<T extends NodeData = NodeData>(
     type: string,
     matchProperties: Partial<T>,
     baseProperties?: T,
     options?: MergeOptions<T>
-  ): MergeResult<T> {
+  ): Promise<MergeResult<T>> {
     validateNodeType(type, this.schema);
 
     // Build WHERE clause for all match properties
@@ -677,8 +714,7 @@ export class GraphDatabase {
       }
     }
 
-    return this.transaction(() => {
-      // Build SQL to find matching node
+    return await this.transaction(() => {
       const whereConditions = matchKeys.map(
         (key) => `json_extract(properties, '$.${key}') = ?`
       );
@@ -781,20 +817,20 @@ export class GraphDatabase {
    * );
    * ```
    */
-  mergeEdge<T extends NodeData = NodeData>(
+  async mergeEdge<T extends NodeData = NodeData>(
     from: number,
     type: string,
     to: number,
     properties?: T,
     options?: EdgeMergeOptions<T>
-  ): EdgeMergeResult<T> {
+  ): Promise<EdgeMergeResult<T>> {
     validateEdgeType(type, this.schema);
     validateNodeId(from);
     validateNodeId(to);
 
     // Verify nodes exist
-    const fromNode = this.getNode(from);
-    const toNode = this.getNode(to);
+    const fromNode = this._getNodeSync(from);
+    const toNode = this._getNodeSync(to);
 
     if (!fromNode) {
       throw new Error(`Source node with ID ${from} not found`);
@@ -803,7 +839,7 @@ export class GraphDatabase {
       throw new Error(`Target node with ID ${to} not found`);
     }
 
-    return this.transaction(() => {
+    return await this.transaction(() => {
       // Find existing edges
       const stmt = this.db.prepare(`
         SELECT * FROM edges
@@ -923,7 +959,7 @@ export class GraphDatabase {
    * db.mergeNode('Job', { url: 'https://...' }, ...);
    * ```
    */
-  createPropertyIndex(nodeType: string, property: string, unique = false): void {
+  async createPropertyIndex(nodeType: string, property: string, unique = false): Promise<void> {
     const indexName = `idx_merge_${nodeType}_${property}`;
     const uniqueClause = unique ? 'UNIQUE' : '';
 
@@ -969,7 +1005,7 @@ export class GraphDatabase {
    * });
    * ```
    */
-  listIndexes(): IndexInfo[] {
+  async listIndexes(): Promise<IndexInfo[]> {
     const stmt = this.db.prepare(`
       SELECT name, tbl_name as 'table', sql
       FROM sqlite_master
@@ -1002,7 +1038,10 @@ export class GraphDatabase {
    * db.dropIndex('idx_merge_Job_url');
    * ```
    */
-  dropIndex(indexName: string): void {
+  async dropIndex(indexName: string): Promise<void> {
+    if (!/^[A-Za-z0-9_]+$/.test(indexName)) {
+      throw new Error(`Invalid index name: ${indexName}`);
+    }
     this.db.prepare(`DROP INDEX IF EXISTS ${indexName}`).run();
   }
 }
