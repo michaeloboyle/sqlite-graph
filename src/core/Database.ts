@@ -21,6 +21,7 @@ import {
   MergePerformanceWarning,
   IndexInfo
 } from '../types/merge';
+import { GraphEntity } from '../types/pattern';
 import { serialize, deserialize, timestampToDate } from '../utils/serialization';
 import {
   validateNodeType,
@@ -468,7 +469,7 @@ export class GraphDatabase {
    *   .exec();
    * ```
    */
-  pattern<T extends Record<string, unknown> = Record<string, unknown>>(): PatternQuery<T> {
+  pattern<T extends Record<string, GraphEntity> = Record<string, GraphEntity>>(): PatternQuery<T> {
     return new PatternQuery<T>(this.db);
   }
 
