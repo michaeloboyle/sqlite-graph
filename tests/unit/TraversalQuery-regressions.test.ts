@@ -59,6 +59,16 @@ describe('TraversalQuery regressions', () => {
 
       expect(db.traverse(ids[0]).out('E').toArray()).toHaveLength(3);
     });
+
+    it('reaches minDepth when maxDepth is not set', () => {
+      const db = new GraphDatabase(':memory:');
+      const ids = Array.from({ length: 5 }, (_, i) => db.createNode('T', { name: `c${i}` }).id);
+      for (let i = 0; i < ids.length - 1; i++) db.createEdge(ids[i], 'NEXT', ids[i + 1]);
+
+      const names = db.traverse(ids[0]).out('NEXT').minDepth(2).toArray().map(n => n.properties.name);
+
+      expect(names).toEqual(['c2']);
+    });
   });
 
   describe('#11 both() honours nodeType', () => {

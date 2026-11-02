@@ -781,6 +781,10 @@ toArray(): Node[]
 
 **Returns:** Array of nodes reached during traversal
 
+**Depth and duplicates:**
+- Without `maxDepth()`, each defined step is followed once (`.out('X')` is one hop), extended to `minDepth()` when that is deeper.
+- Without `unique()`, a node is returned once per distinct path. A path never revisits one of its own nodes, so cycles terminate, but result size can grow exponentially with depth on dense graphs; use `unique()` for reachability.
+
 **Example:**
 
 ```typescript

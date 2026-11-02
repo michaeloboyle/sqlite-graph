@@ -243,7 +243,8 @@ export class TraversalQuery {
   /**
    * Execute traversal and return all reachable nodes.
    *
-   * Without maxDepth(), each defined step is followed once (`.out('X')` is one hop).
+   * Without maxDepth(), each defined step is followed once (`.out('X')` is one hop),
+   * extended to minDepth() when that is deeper.
    * Without unique(), a node is returned once per distinct path; a path never
    * revisits a node, so cycles terminate.
    *
@@ -283,8 +284,9 @@ export class TraversalQuery {
       }
 
       if (this.steps.length === 0) continue;
-      // Without maxDepth(), follow each defined step once
-      if (depth >= (this.maxDepthValue ?? this.steps.length)) continue;
+      // Without maxDepth(), follow each defined step once, but reach minDepth()
+      const limit = this.maxDepthValue ?? Math.max(this.steps.length, this.minDepthValue ?? 0);
+      if (depth >= limit) continue;
 
       const step = this.steps[Math.min(depth, this.steps.length - 1)];
       for (const neighborId of this.getNeighbors(nodeId, step)) {
