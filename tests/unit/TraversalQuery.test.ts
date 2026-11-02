@@ -732,12 +732,10 @@ describe('TraversalQuery', () => {
   });
 
   describe('Edge Cases and Error Handling', () => {
-    it('should handle traversal from non-existent node gracefully', () => {
-      const nodes = db.traverse(99999)
-        .out('LINKS')
-        .toArray();
-
-      expect(nodes).toEqual([]);
+    it('should reject traversal from a non-existent node', () => {
+      // Owner ruling on #18 (2026-11-02): traverse() throws for a missing start
+      // node, matching Database.test.ts
+      expect(() => db.traverse(99999)).toThrow('Start node with ID 99999 not found');
     });
 
     it('should handle empty graph', () => {
