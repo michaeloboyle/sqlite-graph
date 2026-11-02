@@ -84,7 +84,7 @@ git clone https://github.com/michaeloboyle/sqlite-graph.git
 cd sqlite-graph
 npm install
 npm run build
-npm test  # 294 tests passing
+npm test  # 415 of 417 passing; 2 known failures: #17, #18
 ```
 
 When published (target: late December 2025):
@@ -234,6 +234,19 @@ All performance goals met ✅
 
 See [BENCHMARKS.md](docs/BENCHMARKS.md) for detailed performance analysis, methodology, and hardware specifications.
 
+### Scale benchmark (2026-11, 100k nodes / 500k edges)
+
+Run with `npm run build && node benchmarks/scale-benchmark.js`. Apple M2 Pro, Node 22, medians:
+
+| Operation | sqlite-graph | Note |
+|---|---|---|
+| getNode | 0.006ms | parity with raw better-sqlite3 |
+| `where({ email })`, no index | 22.4ms | full scan, grows linearly |
+| `where({ email })` after `createPropertyIndex('Person', 'email')` | 0.022ms | ~1000x; index any property you filter on |
+| `traverse().out().unique().maxDepth(3)` (~155 nodes) | 3.79ms | before #12 fixes; raw SQLite 1.10ms |
+| `shortestPath` between random nodes | ~2.5s | unidirectional BFS, see #16 |
+| single `createNode` autocommit, WAL (default since #13) | 4,405/s internal SSD, 21,277/s external drive | 1,491/s and 1,202/s with `{ wal: false }` (median of 5) |
+
 ## Contributing
 
 Contributions are welcome! We follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
@@ -268,8 +281,8 @@ MIT License - see [LICENSE](LICENSE) for details
 
 **Status:** 🟡 Alpha - Phase 1-2 Complete, Phase 3 Partial | Phase 4 (Browser Support) In Progress
 **Current Phase:** Building v1.0 with universal browser support (6-week timeline)
-**Test Status:** 294 tests passing | 2 suites with memory issues | ~75-80% coverage (estimated)
-**Not Production Ready:** Memory crashes in coverage tests, missing npm publish config
+**Test Status:** 415 of 417 passing (known failures: #17 nested transactions, #18 traverse() on a missing node) | ~75-80% coverage (estimated)
+**Not Production Ready:** shortestPath is slow on large graphs (#16), missing npm publish config
 
 **What Works:**
 - ✅ Complete CRUD operations with transactions
