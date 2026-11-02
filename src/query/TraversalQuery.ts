@@ -3,6 +3,45 @@ import { Node, TraversalStep } from '../types';
 import { deserialize, timestampToDate } from '../utils/serialization';
 
 /**
+ * BFS queue entry. `prev` links back along the path for cycle detection.
+ */
+interface QueueEntry {
+  nodeId: number;
+  depth: number;
+  prev?: QueueEntry;
+}
+
+/**
+ * True if nodeId already appears on the path ending at entry.
+ */
+function isOnPath(entry: QueueEntry | undefined, nodeId: number): boolean {
+  for (let e = entry; e; e = e.prev) {
+    if (e.nodeId === nodeId) return true;
+  }
+  return false;
+}
+
+/**
+ * Prepared statements are reused per connection; traversal runs the same
+ * few queries once per hop.
+ */
+const statementCache = new WeakMap<Database.Database, Map<string, Database.Statement>>();
+
+function cachedPrepare(db: Database.Database, sql: string): Database.Statement {
+  let cache = statementCache.get(db);
+  if (!cache) {
+    cache = new Map();
+    statementCache.set(db, cache);
+  }
+  let stmt = cache.get(sql);
+  if (!stmt) {
+    stmt = db.prepare(sql);
+    cache.set(sql, stmt);
+  }
+  return stmt;
+}
+
+/**
  * Graph traversal query builder for exploring relationships.
  * Provides methods for walking the graph in various directions and finding paths.
  *
@@ -204,6 +243,10 @@ export class TraversalQuery {
   /**
    * Execute traversal and return all reachable nodes.
    *
+   * Without maxDepth(), each defined step is followed once (`.out('X')` is one hop).
+   * Without unique(), a node is returned once per distinct path; a path never
+   * revisits a node, so cycles terminate.
+   *
    * @returns Array of nodes reached during traversal
    *
    * @example
@@ -217,52 +260,44 @@ export class TraversalQuery {
    * ```
    */
   toArray(): Node[] {
-    const visited = new Set<number>();
     const results: Node[] = [];
-    const queue: Array<{ nodeId: number; depth: number }> = [
-      { nodeId: this.startNodeId, depth: 0 }
-    ];
+    const seen = new Set<number>([this.startNodeId]);
+    const queue: QueueEntry[] = [{ nodeId: this.startNodeId, depth: 0 }];
 
-    while (queue.length > 0) {
-      const { nodeId, depth } = queue.shift()!;
+    // Head index instead of queue.shift(), which is O(n) per dequeue
+    for (let head = 0; head < queue.length; head++) {
+      const entry = queue[head];
+      const { nodeId, depth } = entry;
 
-      // Check max depth
-      if (this.maxDepthValue !== undefined && depth > this.maxDepthValue) {
-        continue;
-      }
-
-      // Skip if already visited (for unique mode)
-      if (this.uniqueNodes && visited.has(nodeId)) {
-        continue;
-      }
-
-      visited.add(nodeId);
-
-      // Get node
       const node = this.getNode(nodeId);
       if (!node) continue;
 
-      // Apply filter
-      if (this.filterPredicate && !this.filterPredicate(node)) {
-        continue;
-      }
-
-      // Add to results if within depth range
-      if (
-        (this.minDepthValue === undefined || depth >= this.minDepthValue) &&
-        depth > 0 // Don't include start node
-      ) {
-        results.push(node);
-      }
-
-      // Get neighbors based on traversal steps
-      if (this.steps.length > 0) {
-        const step = this.steps[Math.min(depth, this.steps.length - 1)];
-        const neighbors = this.getNeighbors(nodeId, step);
-
-        for (const neighborId of neighbors) {
-          queue.push({ nodeId: neighborId, depth: depth + 1 });
+      // The start node is never returned or filtered
+      if (depth > 0) {
+        if (this.filterPredicate && !this.filterPredicate(node)) {
+          continue;
         }
+        if (this.minDepthValue === undefined || depth >= this.minDepthValue) {
+          results.push(node);
+        }
+      }
+
+      if (this.steps.length === 0) continue;
+      // Without maxDepth(), follow each defined step once
+      if (depth >= (this.maxDepthValue ?? this.steps.length)) continue;
+
+      const step = this.steps[Math.min(depth, this.steps.length - 1)];
+      for (const neighborId of this.getNeighbors(nodeId, step)) {
+        if (this.uniqueNodes) {
+          // Mark on enqueue so duplicates never enter the queue
+          if (seen.has(neighborId)) continue;
+          seen.add(neighborId);
+        } else if (isOnPath(entry, neighborId)) {
+          // Without unique(), nodes repeat once per distinct path,
+          // but never along one path, so cycles terminate
+          continue;
+        }
+        queue.push({ nodeId: neighborId, depth: depth + 1, prev: entry });
       }
     }
 
@@ -288,49 +323,37 @@ export class TraversalQuery {
    */
   toPaths(): Node[][] {
     const paths: Node[][] = [];
-    const queue: Array<{ nodeId: number; path: Node[]; depth: number; visited: Set<number> }> = [
-      { nodeId: this.startNodeId, path: [], depth: 0, visited: new Set() }
+    const queue: Array<QueueEntry & { path: Node[] }> = [
+      { nodeId: this.startNodeId, depth: 0, path: [] }
     ];
 
-    while (queue.length > 0) {
-      const { nodeId, path, depth, visited } = queue.shift()!;
+    for (let head = 0; head < queue.length; head++) {
+      const entry = queue[head];
+      const { nodeId, path, depth } = entry;
 
-      // Check max depth
-      if (this.maxDepthValue !== undefined && depth > this.maxDepthValue) {
-        continue;
-      }
-
-      // Cycle detection: skip if node already in this path
-      if (visited.has(nodeId)) {
-        continue;
-      }
-
-      // Get node
       const node = this.getNode(nodeId);
       if (!node) continue;
-
-      const newPath = [...path, node];
-      const newVisited = new Set(visited);
-      newVisited.add(nodeId);
 
       // Apply filter
       if (this.filterPredicate && !this.filterPredicate(node)) {
         continue;
       }
 
+      const newPath = [...path, node];
+
       // Add complete path if we've traversed at least one step
       if (depth > 0) {
         paths.push(newPath);
       }
 
-      // Get neighbors
-      if (this.steps.length > 0) {
-        const step = this.steps[Math.min(depth, this.steps.length - 1)];
-        const neighbors = this.getNeighbors(nodeId, step);
+      if (this.steps.length === 0) continue;
+      if (this.maxDepthValue !== undefined && depth >= this.maxDepthValue) continue;
 
-        for (const neighborId of neighbors) {
-          queue.push({ nodeId: neighborId, path: newPath, depth: depth + 1, visited: newVisited });
-        }
+      const step = this.steps[Math.min(depth, this.steps.length - 1)];
+      for (const neighborId of this.getNeighbors(nodeId, step)) {
+        // Cycle detection: skip nodes already on this path
+        if (isOnPath(entry, neighborId)) continue;
+        queue.push({ nodeId: neighborId, depth: depth + 1, path: newPath, prev: entry });
       }
     }
 
@@ -360,8 +383,8 @@ export class TraversalQuery {
 
     visited.add(this.startNodeId);
 
-    while (queue.length > 0) {
-      const currentId = queue.shift()!;
+    for (let head = 0; head < queue.length; head++) {
+      const currentId = queue[head];
 
       // Found target
       if (currentId === targetNodeId) {
@@ -487,7 +510,7 @@ export class TraversalQuery {
    * @private
    */
   private getNode(id: number): Node | null {
-    const stmt = this.db.prepare('SELECT * FROM nodes WHERE id = ?');
+    const stmt = cachedPrepare(this.db, 'SELECT * FROM nodes WHERE id = ?');
     const row = stmt.get(id) as any;
 
     if (!row) return null;
@@ -530,20 +553,22 @@ export class TraversalQuery {
         params.push(step.nodeType);
       }
     } else {
-      // both directions
+      // both directions; the node type filter must cover both UNION branches
       sql = `
-        SELECT e.to_id as id FROM edges e WHERE e.from_id = ? AND e.type = ?
-        UNION
-        SELECT e.from_id as id FROM edges e WHERE e.to_id = ? AND e.type = ?
+        SELECT u.id FROM (
+          SELECT e.to_id AS id FROM edges e WHERE e.from_id = ? AND e.type = ?
+          UNION
+          SELECT e.from_id AS id FROM edges e WHERE e.to_id = ? AND e.type = ?
+        ) u
       `;
       params.push(nodeId, step.edgeType);
       if (step.nodeType) {
-        sql += ` AND EXISTS (SELECT 1 FROM nodes n WHERE n.id = id AND n.type = ?)`;
+        sql += ` WHERE EXISTS (SELECT 1 FROM nodes n WHERE n.id = u.id AND n.type = ?)`;
         params.push(step.nodeType);
       }
     }
 
-    const stmt = this.db.prepare(sql);
+    const stmt = cachedPrepare(this.db, sql);
     const rows = stmt.all(...params) as Array<{ id: number }>;
     return rows.map(row => row.id);
   }
@@ -558,7 +583,7 @@ export class TraversalQuery {
       UNION
       SELECT from_id as id FROM edges WHERE to_id = ?
     `;
-    const stmt = this.db.prepare(sql);
+    const stmt = cachedPrepare(this.db, sql);
     const rows = stmt.all(nodeId, nodeId) as Array<{ id: number }>;
     return rows.map(row => row.id);
   }
