@@ -56,6 +56,11 @@ export interface DatabaseOptions {
   fileMustExist?: boolean;
   timeout?: number;
   verbose?: (message?: any, ...additionalArgs: any[]) => void;
+  /**
+   * Use WAL journaling with synchronous=NORMAL for file databases (default: true).
+   * Ignored for in-memory and readonly databases.
+   */
+  wal?: boolean;
 }
 
 /**

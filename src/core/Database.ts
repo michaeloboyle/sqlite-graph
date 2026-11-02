@@ -102,6 +102,13 @@ export class GraphDatabase {
     this.schema = options?.schema;
     this.preparedStatements = new Map();
 
+    // WAL + synchronous=NORMAL for file databases unless opted out.
+    // Autocommit writes avoid a full fsync per statement (~22x in benchmarks).
+    if (options?.wal !== false && !options?.readonly && !this.db.memory) {
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
+    }
+
     // Initialize database schema
     initializeSchema(this.db);
 
