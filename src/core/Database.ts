@@ -63,6 +63,7 @@ export class GraphDatabase {
   public readonly db: Database.Database;
   private schema?: GraphSchema;
   private preparedStatements: Map<string, Database.Statement>;
+  private transactionDepth = 0;
 
   /**
    * Creates a new graph database instance.
@@ -514,10 +515,12 @@ export class GraphDatabase {
    * ```
    */
   transaction<T>(fn: (ctx: TransactionContext) => T): T {
-    // Start transaction
-    this.db.prepare('BEGIN').run();
+    // Inside an open transaction, nest with a savepoint instead of BEGIN (#17)
+    const nestedName = this.db.inTransaction ? `sg_tx_${this.transactionDepth}` : undefined;
+    this.db.prepare(nestedName ? `SAVEPOINT "${nestedName}"` : 'BEGIN').run();
+    this.transactionDepth++;
 
-    const ctx = new TransactionContext(this.db);
+    const ctx = new TransactionContext(this.db, nestedName);
 
     try {
       const result = fn(ctx);
@@ -534,6 +537,8 @@ export class GraphDatabase {
         ctx.rollback();
       }
       throw error;
+    } finally {
+      this.transactionDepth--;
     }
   }
 
