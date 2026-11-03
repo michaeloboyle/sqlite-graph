@@ -40,8 +40,15 @@ export class TransactionContext {
    * @param db - SQLite database instance
    * @internal
    */
-  constructor(db: Database.Database) {
+  private nestedName?: string;
+
+  /**
+   * @param nestedName - set when this context is a savepoint inside an outer
+   *   transaction; commit/rollback then release or roll back that savepoint only
+   */
+  constructor(db: Database.Database, nestedName?: string) {
     this.db = db;
+    this.nestedName = nestedName;
   }
 
   /**
@@ -62,7 +69,7 @@ export class TransactionContext {
     if (this.finalized) {
       throw new TransactionAlreadyFinalizedError();
     }
-    this.db.prepare('COMMIT').run();
+    this.db.prepare(this.nestedName ? `RELEASE "${this.nestedName}"` : 'COMMIT').run();
     this.finalized = true;
   }
 
@@ -88,7 +95,13 @@ export class TransactionContext {
     if (this.finalized) {
       throw new TransactionAlreadyFinalizedError();
     }
-    this.db.prepare('ROLLBACK').run();
+    if (this.nestedName) {
+      // Undo the inner work, then close the savepoint; the outer transaction continues
+      this.db.prepare(`ROLLBACK TO "${this.nestedName}"`).run();
+      this.db.prepare(`RELEASE "${this.nestedName}"`).run();
+    } else {
+      this.db.prepare('ROLLBACK').run();
+    }
     this.finalized = true;
   }
 
